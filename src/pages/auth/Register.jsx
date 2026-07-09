@@ -17,6 +17,15 @@ export default function Register() {
   const [selectedRole, setSelectedRole] = useState(null); // 'homeowner' | 'professional'
   const [showPassword, setShowPassword] = useState(false);
   
+  // Form State
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    password: ''
+  });
+  const [errors, setErrors] = useState({});
+
   // States for ID Upload (Professional only)
   const [idFront, setIdFront] = useState(null);
   const [idBack, setIdBack] = useState(null);
@@ -28,6 +37,64 @@ export default function Register() {
       setSelectedSkills(selectedSkills.filter(s => s !== skill));
     } else {
       setSelectedSkills([...selectedSkills, skill]);
+    }
+    if (errors.skills) {
+      setErrors({ ...errors, skills: '' });
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
+  };
+
+  const handleRegister = (e) => {
+    e.preventDefault();
+    
+    const newErrors = {};
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    } else if (formData.fullName.trim().length < 3) {
+      newErrors.fullName = 'Full name must be at least 3 characters';
+    }
+
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (formData.phone.length < 9) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (selectedRole === 'professional') {
+      if (selectedSkills.length === 0) {
+        newErrors.skills = 'Please select at least one skill';
+      }
+      if (!idFront) {
+        newErrors.idFront = 'ID Front is required';
+      }
+      if (!idBack) {
+        newErrors.idBack = 'ID Back is required';
+      }
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      console.log('Registration submitted:', { role: selectedRole, ...formData, skills: selectedSkills, idFront, idBack });
+      navigate(selectedRole === 'professional' ? '/pro-dashboard' : '/dashboard');
     }
   };
 
@@ -216,7 +283,7 @@ export default function Register() {
                 />
               </div>
 
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-5" onSubmit={handleRegister}>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700 ml-1">Full Name</label>
@@ -226,10 +293,14 @@ export default function Register() {
                     </div>
                     <input 
                       type="text" 
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#c9a765] focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      className={`w-full pl-12 pr-4 py-4 bg-white border ${errors.fullName ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-[#c9a765]'} rounded-2xl focus:ring-2 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700`}
                       placeholder="John Doe"
                     />
                   </div>
+                  {errors.fullName && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.fullName}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -240,25 +311,33 @@ export default function Register() {
                     </div>
                     <input 
                       type="email" 
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#c9a765] focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`w-full pl-12 pr-4 py-4 bg-white border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-[#c9a765]'} rounded-2xl focus:ring-2 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700`}
                       placeholder="you@example.com"
                     />
                   </div>
+                  {errors.email && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700 ml-1">Phone Number</label>
-                  <div className="relative flex bg-white border border-slate-200 rounded-2xl focus-within:ring-2 focus-within:ring-[#c9a765] focus-within:border-transparent transition-all overflow-hidden group">
+                  <div className={`relative flex bg-white border ${errors.phone ? 'border-red-500 focus-within:ring-red-500' : 'border-slate-200 focus-within:ring-[#c9a765]'} rounded-2xl focus-within:ring-2 focus-within:border-transparent transition-all overflow-hidden group`}>
                     <div className="flex items-center gap-2 pl-4 pr-3 border-r border-slate-200 shrink-0 bg-slate-50">
                       <Phone className="w-5 h-5 text-slate-400 group-focus-within:text-[#1f3b6c] transition-colors" />
                       <span className="text-sm font-bold text-slate-700">+966</span>
                     </div>
                     <input 
                       type="tel" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
                       className="w-full py-4 pl-3 pr-4 bg-transparent outline-none placeholder:text-slate-400 font-medium text-slate-700"
                       placeholder="5X XXX XXXX"
                     />
                   </div>
+                  {errors.phone && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.phone}</p>}
                 </div>
 
                 {/* Professional Skills Section */}
@@ -272,7 +351,7 @@ export default function Register() {
                       <div 
                         onClick={() => setIsSkillsOpen(!isSkillsOpen)}
                         className={`w-full pl-12 pr-12 py-3 bg-white border rounded-2xl cursor-pointer flex flex-wrap gap-2 items-center min-h-[56px] transition-all
-                          ${isSkillsOpen ? 'ring-2 ring-[#c9a765] border-transparent' : 'border-slate-200 hover:border-[#c9a765]'}`}
+                          ${isSkillsOpen ? 'ring-2 ring-[#c9a765] border-transparent' : (errors.skills ? 'border-red-500 focus-within:ring-red-500' : 'border-slate-200 hover:border-[#c9a765]')}`}
                       >
                         {selectedSkills.length === 0 ? (
                           <span className="text-slate-400 font-medium">Select your skills...</span>
@@ -328,6 +407,7 @@ export default function Register() {
                         </motion.div>
                       )}
                     </AnimatePresence>
+                    {errors.skills && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.skills}</p>}
                   </div>
                 )}
 
@@ -345,10 +425,11 @@ export default function Register() {
                             onChange={(e) => {
                               if(e.target.files && e.target.files[0]) {
                                 setIdFront(e.target.files[0].name);
+                                if (errors.idFront) setErrors({ ...errors, idFront: '' });
                               }
                             }}
                           />
-                          <div className={`h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${idFront ? 'border-[#23a06a] bg-[#23a06a]/5' : 'border-slate-300 bg-slate-50 group-hover:border-[#c9a765] group-hover:bg-[#c9a765]/5'}`}>
+                          <div className={`h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${errors.idFront ? 'border-red-500 bg-red-50' : (idFront ? 'border-[#23a06a] bg-[#23a06a]/5' : 'border-slate-300 bg-slate-50 group-hover:border-[#c9a765] group-hover:bg-[#c9a765]/5')}`}>
                             {idFront ? (
                               <>
                                 <CheckCircle2 className="w-8 h-8 text-[#23a06a] mb-2" />
@@ -372,10 +453,11 @@ export default function Register() {
                             onChange={(e) => {
                               if(e.target.files && e.target.files[0]) {
                                 setIdBack(e.target.files[0].name);
+                                if (errors.idBack) setErrors({ ...errors, idBack: '' });
                               }
                             }}
                           />
-                          <div className={`h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${idBack ? 'border-[#23a06a] bg-[#23a06a]/5' : 'border-slate-300 bg-slate-50 group-hover:border-[#c9a765] group-hover:bg-[#c9a765]/5'}`}>
+                          <div className={`h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${errors.idBack ? 'border-red-500 bg-red-50' : (idBack ? 'border-[#23a06a] bg-[#23a06a]/5' : 'border-slate-300 bg-slate-50 group-hover:border-[#c9a765] group-hover:bg-[#c9a765]/5')}`}>
                             {idBack ? (
                               <>
                                 <CheckCircle2 className="w-8 h-8 text-[#23a06a] mb-2" />
@@ -393,6 +475,7 @@ export default function Register() {
                       <p className="text-[11px] text-slate-400 mt-2 ml-1 flex items-center gap-1">
                         <UploadCloud size={12} /> PNG, JPG or PDF (Max. 5MB)
                       </p>
+                      {(errors.idFront || errors.idBack) && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.idFront || errors.idBack}</p>}
                     </div>
                   </div>
 
@@ -404,7 +487,10 @@ export default function Register() {
                     </div>
                     <input 
                       type={showPassword ? "text" : "password"} 
-                      className="w-full pl-12 pr-12 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#c9a765] focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className={`w-full pl-12 pr-12 py-4 bg-white border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-[#c9a765]'} rounded-2xl focus:ring-2 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700`}
                       placeholder="••••••••"
                     />
                     <button 
@@ -415,6 +501,7 @@ export default function Register() {
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
+                  {errors.password && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.password}</p>}
                 </div>
 
                 <div className="pt-2">
@@ -427,8 +514,7 @@ export default function Register() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  type="button"
-                  onClick={() => navigate(selectedRole === 'professional' ? '/pro-dashboard' : '/dashboard')}
+                  type="submit"
                   className="w-full bg-[#1f3b6c] hover:bg-[#1a325b] text-white py-4 rounded-2xl font-bold shadow-xl shadow-[#1f3b6c]/20 transition-all flex items-center justify-center gap-2 mt-6"
                 >
                   Create Account <ArrowRight size={18} />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import orders from "../../../data/orders";
+import initialOrders from "../../../data/orders";
 
 import OrderCard from "../../../components/homeowner/OrderCard/OrderCard";
 import OrderTabs from "../../../components/homeowner/OrderTabs/OrderTabs";
@@ -9,11 +9,20 @@ import BackButton from "../../../components/homeowner/BackButton";
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState("all");
+  const [localOrders, setLocalOrders] = useState(initialOrders);
+
+  const handleStatusChange = (id, newStatus) => {
+    setLocalOrders((prev) =>
+      prev.map((order) =>
+        order.id === id ? { ...order, status: newStatus } : order
+      )
+    );
+  };
 
   const filteredOrders =
     activeTab === "all"
-      ? orders
-      : orders.filter((order) => order.status === activeTab);
+      ? localOrders
+      : localOrders.filter((order) => order.status === activeTab);
 
   return (
     <main className="min-h-screen bg-[#F7F5F2] pb-32">
@@ -42,7 +51,7 @@ const Orders = () => {
         <OrderTabs
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          orders={orders}
+          orders={localOrders}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
@@ -51,6 +60,7 @@ const Orders = () => {
             <OrderCard
               key={order.id}
               order={order}
+              onStatusChange={handleStatusChange}
             />
           ))}
 

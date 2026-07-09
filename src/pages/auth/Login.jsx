@@ -6,6 +6,40 @@ import BackgroundElements from '../../components/BackgroundElements';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    const newErrors = {};
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length === 0) {
+      console.log('Login submitted:', formData);
+      // Proceed with login logic here
+    }
+  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-[#f5f3ec]">
@@ -33,7 +67,7 @@ export default function Login() {
             <p className="text-slate-500 font-medium">Sign in to continue to Fixora</p>
           </div>
 
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700 ml-1">Email Address</label>
               <div className="relative group">
@@ -41,11 +75,15 @@ export default function Login() {
                   <Mail size={20} />
                 </div>
                 <input 
-                  type="email" 
-                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#c9a765] focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700 shadow-sm"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`w-full pl-12 pr-4 py-3.5 bg-white border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-[#c9a765]'} rounded-2xl focus:ring-2 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700 shadow-sm`}
                   placeholder="you@example.com"
                 />
               </div>
+              {errors.email && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -58,8 +96,11 @@ export default function Login() {
                   <Lock size={20} />
                 </div>
                 <input 
-                  type={showPassword ? "text" : "password"} 
-                  className="w-full pl-12 pr-12 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#c9a765] focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700 shadow-sm"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`w-full pl-12 pr-12 py-3.5 bg-white border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-[#c9a765]'} rounded-2xl focus:ring-2 focus:border-transparent outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700 shadow-sm`}
                   placeholder="••••••••"
                 />
                 <button 
@@ -70,6 +111,7 @@ export default function Login() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              {errors.password && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.password}</p>}
             </div>
 
             <div className="flex items-center ml-1 mt-2">
@@ -87,6 +129,7 @@ export default function Login() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              type="submit"
               className="w-full bg-[#1f3b6c] hover:bg-[#1a325b] text-white py-3.5 rounded-2xl font-bold shadow-xl shadow-[#1f3b6c]/20 transition-all flex items-center justify-center gap-2 mt-4"
             >
               Login <ArrowRight size={18} />

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const OrderCard = ({ order }) => {
+const OrderCard = ({ order, onStatusChange }) => {
   const statusConfig = {
     active: {
       label: "Active",
@@ -99,6 +99,31 @@ const OrderCard = ({ order }) => {
           </div>
 
         </div>
+
+        {/* Action Buttons */}
+        {order.status === 'active' && (
+          <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                if (onStatusChange) onStatusChange(order.id, 'completed');
+              }}
+              className="flex-1 rounded-xl bg-green-50 py-2.5 text-sm font-bold text-green-600 transition-colors hover:bg-green-100"
+            >
+              Complete
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                if (onStatusChange) onStatusChange(order.id, 'cancelled');
+              }}
+              className="flex-1 rounded-xl bg-red-50 py-2.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
       </div>
     </Link>
   );

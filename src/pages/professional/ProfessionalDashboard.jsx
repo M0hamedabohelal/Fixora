@@ -185,7 +185,8 @@ export default function ProfessionalDashboard() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                 
                 <div className="absolute top-4 left-4 flex gap-2">
-                  <div className="bg-white backdrop-blur-md px-3 py-1.5 rounded-xl text-white text-xs font-bold border border-white">
+                  <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-slate-700 text-xs font-bold border border-white flex items-center gap-1 shadow-sm">
+                    <Clock className="w-3 h-3 text-slate-500" />
                     {job.timeAgo}
                   </div>
                 </div>

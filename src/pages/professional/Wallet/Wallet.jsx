@@ -10,7 +10,7 @@ export default function Wallet() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="flex items-center justify-between mb-8">
-            <BackButton className="bg-white text-white border-white hover:bg-white" />
+            <BackButton className="bg-white/20 text-white border-white/30 hover:bg-white/30" />
             <h1 className="text-white font-bold text-xl">Earnings & Wallet</h1>
             <div className="w-10"></div>
           </div>
