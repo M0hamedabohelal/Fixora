@@ -27,21 +27,13 @@ const ActionButtons = ({ order, onOpenChat }) => {
         </button>
 
         {status === "active" && (
-          <>
-            <button
-              className="flex items-center justify-center gap-2 rounded-2xl bg-green-600 py-3 text-white font-medium transition hover:bg-green-700"
-            >
-              <i className="fa-solid fa-location-crosshairs"></i>
-              Track Order
-            </button>
-            <Link
-              to="/checkout"
-              className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-[#c9a765] py-4 text-white font-bold transition hover:bg-[#b89551] shadow-lg mt-2"
-            >
-              <i className="fa-solid fa-credit-card"></i>
-              Proceed to Checkout
-            </Link>
-          </>
+          <Link
+            to="/checkout"
+            className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-[#c9a765] py-4 text-white font-bold transition hover:bg-[#b89551] shadow-lg mt-2"
+          >
+            <i className="fa-solid fa-credit-card"></i>
+            Proceed to Checkout
+          </Link>
         )}
 
         {status === "completed" && (

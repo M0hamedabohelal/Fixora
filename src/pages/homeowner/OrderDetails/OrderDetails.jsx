@@ -60,7 +60,6 @@ const OrderDetails = () => {
         />
       </div>
 
-      <StickyTrackButton order={order} />
 
       <ChatDrawer
         isOpen={openChat}
