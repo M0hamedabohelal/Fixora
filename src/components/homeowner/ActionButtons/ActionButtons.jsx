@@ -1,5 +1,5 @@
 import {Link} from "react-router-dom";
-const ActionButtons = ({ order, onOpenChat }) => {
+const ActionButtons = ({ order, onOpenChat, onOpenRating }) => {
   const { status, provider } = order;
 
   return (
@@ -37,12 +37,21 @@ const ActionButtons = ({ order, onOpenChat }) => {
         )}
 
         {status === "completed" && (
-          <button
-            className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 text-white font-medium transition hover:bg-blue-700"
-          >
-            <i className="fa-solid fa-rotate-right"></i>
-            Reorder
-          </button>
+          <>
+            <button
+              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 text-white font-medium transition hover:bg-blue-700"
+            >
+              <i className="fa-solid fa-rotate-right"></i>
+              Reorder
+            </button>
+            <button
+              onClick={onOpenRating}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-[#c9a765] py-3 text-white font-medium transition hover:bg-[#b89551]"
+            >
+              <i className="fa-solid fa-star"></i>
+              Rate Provider
+            </button>
+          </>
         )}
 
         {status === "cancelled" && (

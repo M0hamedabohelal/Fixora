@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const OrderCard = ({ order, onStatusChange }) => {
+const OrderCard = ({ order, onStatusChange, onRateClick }) => {
   const statusConfig = {
     active: {
       label: "Active",
@@ -101,6 +101,7 @@ const OrderCard = ({ order, onStatusChange }) => {
         </div>
 
         {/* Action Buttons */}
+        {/* Action Buttons */}
         {order.status === 'active' && (
           <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
             <button
@@ -120,6 +121,21 @@ const OrderCard = ({ order, onStatusChange }) => {
               className="flex-1 rounded-xl bg-red-50 py-2.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
             >
               Cancel
+            </button>
+          </div>
+        )}
+
+        {order.status === 'completed' && (
+          <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                if (onRateClick) onRateClick(order);
+              }}
+              className="flex-1 rounded-xl bg-[#c9a765] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#b89551] flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-star"></i>
+              Rate Provider
             </button>
           </div>
         )}

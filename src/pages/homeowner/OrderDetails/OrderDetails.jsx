@@ -14,6 +14,7 @@ import ActionButtons from "../../../components/homeowner/ActionButtons/ActionBut
 import StickyTrackButton from "../../../components/homeowner/StickyTrackButton/StickyTrackButton";
 import ChatDrawer from "../../../components/homeowner/ChatDrawer/ChatDrawer";
 import HomeownerBottomNav from "../../../components/homeowner/HomeownerBottomNav";
+import RatingModal from "../../../components/homeowner/RatingModal/RatingModal";
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -21,6 +22,7 @@ const OrderDetails = () => {
   const order = orders.find((item) => item.id === id);
 
   const [openChat, setOpenChat] = useState(false);
+  const [openRating, setOpenRating] = useState(false);
 
   const [messages, setMessages] = useState(
     chatData[id] || []
@@ -57,6 +59,7 @@ const OrderDetails = () => {
         <ActionButtons
           order={order}
           onOpenChat={() => setOpenChat(true)}
+          onOpenRating={() => setOpenRating(true)}
         />
       </div>
 
@@ -67,6 +70,16 @@ const OrderDetails = () => {
         order={order}
         messages={messages}
         setMessages={setMessages}
+      />
+
+      <RatingModal
+        isOpen={openRating}
+        onClose={() => setOpenRating(false)}
+        providerName={order?.provider?.name}
+        onSubmit={(data) => {
+          console.log("Rating submitted", data);
+          // show a toast or success message here normally
+        }}
       />
       <HomeownerBottomNav />
     </main>

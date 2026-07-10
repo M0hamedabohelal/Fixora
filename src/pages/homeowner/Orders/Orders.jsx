@@ -6,10 +6,12 @@ import OrderTabs from "../../../components/homeowner/OrderTabs/OrderTabs";
 import HomeownerBottomNav from "../../../components/homeowner/HomeownerBottomNav";
 import FloatingButton from "../../../components/homeowner/FloatingButton/FloatingButton";
 import BackButton from "../../../components/homeowner/BackButton";
+import RatingModal from "../../../components/homeowner/RatingModal/RatingModal";
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [localOrders, setLocalOrders] = useState(initialOrders);
+  const [ratingOrder, setRatingOrder] = useState(null);
 
   const handleStatusChange = (id, newStatus) => {
     setLocalOrders((prev) =>
@@ -61,6 +63,7 @@ const Orders = () => {
               key={order.id}
               order={order}
               onStatusChange={handleStatusChange}
+              onRateClick={(orderToRate) => setRatingOrder(orderToRate)}
             />
           ))}
 
@@ -72,6 +75,14 @@ const Orders = () => {
 
       <HomeownerBottomNav />
 
+      <RatingModal
+        isOpen={!!ratingOrder}
+        onClose={() => setRatingOrder(null)}
+        providerName={ratingOrder?.provider?.name}
+        onSubmit={(data) => {
+          console.log("Rating submitted from Orders page", data);
+        }}
+      />
     </main>
   );
 };
