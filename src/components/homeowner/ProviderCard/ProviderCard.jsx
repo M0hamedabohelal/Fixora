@@ -44,13 +44,6 @@ const ProviderCard = ({ order, onOpenChat }) => {
             </div>
           </div>
         </Link>
-
-        <Link
-          to={`tel:${provider.phone}`}
-          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#12376B] text-white transition hover:bg-[#0F2F5A]"
-        >
-          <i className="fa-solid fa-phone"></i>
-        </Link>
       </div>
 
       {/* Stats */}
@@ -87,19 +80,10 @@ const ProviderCard = ({ order, onOpenChat }) => {
       </div>
 
       {/* Contact */}
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <a
-          href={`tel:${provider.phone}`}
-          className="flex items-center justify-center gap-3 rounded-2xl bg-[#12376B] py-4 font-semibold text-white transition hover:bg-[#0F2F5A]"
-        >
-          <i className="fa-solid fa-phone"></i>
-
-          Call Now
-        </a>
-
+      <div className="mt-6">
         <button
             onClick={onOpenChat}
-            className="group relative flex items-center justify-center gap-3 rounded-2xl border border-[#12376B] py-4 font-semibold text-[#12376B] transition-all hover:bg-[#12376B] hover:text-white hover:shadow-lg hover:shadow-[#12376B]/20 overflow-hidden"
+            className="group relative flex w-full items-center justify-center gap-3 rounded-2xl border border-[#12376B] py-4 font-semibold text-[#12376B] transition-all hover:bg-[#12376B] hover:text-white hover:shadow-lg hover:shadow-[#12376B]/20 overflow-hidden"
             >
             <span className="absolute inset-0 w-full h-full bg-[#12376B]/5 animate-pulse"></span>
             <i className="fa-regular fa-message relative z-10 group-hover:animate-bounce"></i>

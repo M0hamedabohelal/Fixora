@@ -40,7 +40,7 @@ const MessageBubble = ({ message }) => {
       >
         {/* Message */}
         <p className="text-[15px] leading-7 break-words">
-          {message.message}
+          {message.text || message.message}
         </p>
 
         {/* Time */}
@@ -51,7 +51,7 @@ const MessageBubble = ({ message }) => {
               : "justify-end text-gray-400"
           }`}
         >
-          <span>{message.time}</span>
+          <span>{message.timeString || message.time}</span>
 
           {isCustomer && (
             <i className="fa-solid fa-check-double text-[11px]"></i>

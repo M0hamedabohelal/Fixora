@@ -8,19 +8,11 @@ const ActionButtons = ({ order, onOpenChat, onOpenRating }) => {
         Quick Actions
       </h3>
 
-      <div className="grid grid-cols-2 gap-4">
-
-        <Link
-          to={`tel:${provider.phone}`}
-          className="flex items-center justify-center gap-2 rounded-2xl bg-[#12376B] py-3 text-white font-medium transition hover:bg-[#0F2F5A]"
-        >
-          <i className="fa-solid fa-phone"></i>
-          Call
-        </Link>
+      <div className="grid grid-cols-1 gap-4">
 
         <button
           onClick={onOpenChat}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-gray-300 py-3 font-medium text-gray-700 transition hover:bg-gray-100"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-300 py-3 font-medium text-gray-700 transition hover:bg-gray-100"
         >
           <i className="fa-regular fa-comment"></i>
           Chat

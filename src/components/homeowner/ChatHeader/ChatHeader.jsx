@@ -39,18 +39,6 @@ const ChatHeader = ({ provider, onClose }) => {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Link
-          to={`tel:${provider.phone}`}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-[#12376B] transition hover:bg-[#12376B]/10"
-        >
-          <i className="fa-solid fa-phone"></i>
-        </Link>
-
-        <button
-          className="flex h-10 w-10 items-center justify-center rounded-full text-[#12376B] transition hover:bg-[#12376B]/10"
-        >
-          <i className="fa-solid fa-video"></i>
-        </button>
 
         <button
           onClick={onClose}
