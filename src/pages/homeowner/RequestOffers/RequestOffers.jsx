@@ -126,13 +126,13 @@ export default function RequestOffers() {
 
       // Send Notification to Professional
       await addDoc(collection(db, "notifications"), {
-        recipientId: offer.professionalId,
-        type: "offer_accepted",
+        targetUserId: offer.professionalId,
+        type: "system",
         title: "Offer Accepted! 🎉",
         message: `Your offer for ${request.serviceType || "the requested service"} has been accepted! You can now start the job.`,
         requestId: request.id,
         offerId: offer.id,
-        read: false,
+        isRead: false,
         createdAt: serverTimestamp()
       });
 
