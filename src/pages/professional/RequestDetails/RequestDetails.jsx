@@ -5,6 +5,7 @@ import BackButton from '../../../components/homeowner/BackButton';
 import ProfessionalBottomNav from '../../../components/professional/ProfessionalBottomNav';
 import { auth, db } from '../../../firebase/config';
 import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, increment, query, where, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function RequestDetails() {
   const { id } = useParams();
@@ -20,93 +21,102 @@ export default function RequestDetails() {
   const [otherOffers, setOtherOffers] = useState([]);
 
   useEffect(() => {
-    const fetchRequest = async () => {
-      try {
-        const reqDoc = await getDoc(doc(db, 'requests', id));
-        if (reqDoc.exists()) {
-          const data = reqDoc.data();
-          
-          let customerData = { name: 'Customer', rating: '5.0', joined: '2024' };
-          if (data.homeownerId) {
-            const userDoc = await getDoc(doc(db, 'users', data.homeownerId));
-            if (userDoc.exists()) {
-              customerData.name = userDoc.data().fullName || 'Customer';
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const fetchRequest = async () => {
+        try {
+          const reqDoc = await getDoc(doc(db, 'requests', id));
+          if (reqDoc.exists()) {
+            const data = reqDoc.data();
+            
+            let customerData = { name: 'Customer', rating: '5.0', joined: '2024' };
+            if (data.homeownerId) {
+              const userDoc = await getDoc(doc(db, 'users', data.homeownerId));
+              if (userDoc.exists()) {
+                customerData.name = userDoc.data().fullName || 'Customer';
+              }
             }
-          }
 
-          let timeAgo = 'Just now';
-          if (data.createdAt) {
-            const seconds = Math.floor((new Date() - data.createdAt.toDate()) / 1000);
-            if (seconds > 3600) timeAgo = Math.floor(seconds / 3600) + ' hrs ago';
-            else if (seconds > 60) timeAgo = Math.floor(seconds / 60) + ' mins ago';
-          }
+            let timeAgo = 'Just now';
+            if (data.createdAt) {
+              const seconds = Math.floor((new Date() - data.createdAt.toDate()) / 1000);
+              if (seconds > 3600) timeAgo = Math.floor(seconds / 3600) + ' hrs ago';
+              else if (seconds > 60) timeAgo = Math.floor(seconds / 60) + ' mins ago';
+            }
 
-          setRequestInfo({
-            id: reqDoc.id,
-            homeownerId: data.homeownerId,
-            title: 'Service Request', // Default title
-            category: data.serviceType || 'General',
-            location: data.location?.name || 'Unknown Location',
-            timeAgo: timeAgo,
-            description: data.description,
-            budget: 'Negotiable',
-            images: data.mediaUrl ? [data.mediaUrl] : [],
-            customer: customerData
-          });
+            setRequestInfo({
+              id: reqDoc.id,
+              homeownerId: data.homeownerId,
+              title: 'Service Request', // Default title
+              category: data.serviceType || 'General',
+              location: data.location?.name || 'Unknown Location',
+              timeAgo: timeAgo,
+              description: data.description,
+              budget: 'Negotiable',
+              images: data.mediaUrl ? [data.mediaUrl] : [],
+              customer: customerData
+            });
 
-          // Fetch other offers for this request
-          const q = query(
-            collection(db, 'offers'), 
-            where('requestId', '==', id)
-          );
-          const offersSnap = await getDocs(q);
-          let count = 0;
-          let otherOffersList = [];
-          
-          for (const docSnapshot of offersSnap.docs) {
-            const offerData = docSnapshot.data();
-            if (offerData.professionalId !== auth.currentUser?.uid) {
-              count++;
-              
-              // Only fetch details for the first 3 to show in UI
-              if (otherOffersList.length < 3) {
-                try {
-                  const proDoc = await getDoc(doc(db, 'users', offerData.professionalId));
-                  let proName = 'Professional';
-                  let proRating = 'New';
-                  let proAvatar = null;
-                  
-                  if (proDoc.exists()) {
-                    const proData = proDoc.data();
-                    proName = proData.fullName || 'Professional';
-                    proRating = proData.rating || 'New';
-                    proAvatar = proData.profileImage || null;
+            // Fetch other offers for this request
+            const q = query(
+              collection(db, 'offers'), 
+              where('requestId', '==', id)
+            );
+            const offersSnap = await getDocs(q);
+            let count = 0;
+            let otherOffersList = [];
+            
+            for (const docSnapshot of offersSnap.docs) {
+              const offerData = docSnapshot.data();
+              if (user && offerData.professionalId !== user.uid) {
+                count++;
+                
+                // Only fetch details for the first 3 to show in UI
+                if (otherOffersList.length < 3) {
+                  try {
+                    const proDoc = await getDoc(doc(db, 'users', offerData.professionalId));
+                    let proName = 'Professional';
+                    let proRating = 'New';
+                    let proAvatar = null;
+                    
+                    if (proDoc.exists()) {
+                      const proData = proDoc.data();
+                      proName = proData.fullName || 'Professional';
+                      proRating = proData.rating || 'New';
+                      proAvatar = proData.profileImage || null;
+                    }
+                    
+                    otherOffersList.push({
+                      id: docSnapshot.id,
+                      proName,
+                      proRating,
+                      proAvatar,
+                    });
+                  } catch (err) {
+                    console.error("Error fetching pro details", err);
                   }
-                  
-                  otherOffersList.push({
-                    id: docSnapshot.id,
-                    proName,
-                    proRating,
-                    proAvatar,
-                  });
-                } catch (err) {
-                  console.error("Error fetching pro details", err);
                 }
               }
             }
-          }
-          
-          setOtherOffersCount(count);
-          setOtherOffers(otherOffersList);
+            
+            setOtherOffersCount(count);
+            setOtherOffers(otherOffersList);
 
+          }
+        } catch (error) {
+          console.error("Error fetching request:", error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching request:", error);
-      } finally {
+      };
+
+      if (user) {
+        fetchRequest();
+      } else {
         setLoading(false);
       }
-    };
-    fetchRequest();
+    });
+
+    return () => unsubscribe();
   }, [id]);
 
   const handleSubmit = async (e) => {
