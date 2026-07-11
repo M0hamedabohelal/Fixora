@@ -37,6 +37,9 @@ export default function HomeownerDashboard() {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
+        import('../../firebase/messaging').then(({ requestNotificationPermission }) => {
+          requestNotificationPermission(user.uid);
+        });
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {

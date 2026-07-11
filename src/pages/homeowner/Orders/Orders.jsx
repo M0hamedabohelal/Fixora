@@ -120,8 +120,53 @@ const Orders = () => {
         isOpen={!!ratingOrder}
         onClose={() => setRatingOrder(null)}
         providerName={ratingOrder?.provider?.name}
-        onSubmit={(data) => {
-          console.log("Rating submitted from Orders page", data);
+        onSubmit={async (data) => {
+          try {
+            const { rating, review } = data;
+            const { doc, addDoc, collection, updateDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db } = await import('../../../firebase/config');
+
+            // 1. Add review
+            await addDoc(collection(db, 'reviews'), {
+              orderId: ratingOrder.id,
+              professionalId: ratingOrder.professionalId,
+              homeownerId: ratingOrder.homeownerId,
+              serviceName: ratingOrder.service?.name || "Service",
+              rating,
+              comment: review,
+              createdAt: serverTimestamp()
+            });
+
+            // 2. Update professional's rating
+            const proRef = doc(db, 'users', ratingOrder.professionalId);
+            const proDoc = await getDoc(proRef);
+            if (proDoc.exists()) {
+              const proData = proDoc.data();
+              const currentRating = parseFloat(proData.rating) || 0;
+              const currentCount = parseInt(proData.reviewCount) || 0;
+              
+              const newCount = currentCount + 1;
+              const newRating = ((currentRating * currentCount) + rating) / newCount;
+
+              await updateDoc(proRef, {
+                rating: newRating.toFixed(1),
+                reviewCount: newCount
+              });
+            }
+
+            // 3. Mark order as reviewed
+            await updateDoc(doc(db, 'orders', ratingOrder.id), {
+              hasReview: true
+            });
+
+            // Update local state
+            setLocalOrders(prev => prev.map(o => o.id === ratingOrder.id ? { ...o, hasReview: true } : o));
+
+            toast.success("تم إرسال التقييم بنجاح!");
+          } catch (error) {
+            console.error("Error submitting review:", error);
+            toast.error("حدث خطأ أثناء إرسال التقييم");
+          }
         }}
       />
     </main>

@@ -16,10 +16,15 @@ export default function ProfessionalDashboard() {
   const [userData, setUserData] = useState({ fullName: 'Ahmed Al-Ghamdi', location: 'Cairo, Nasr City', profileImage: null });
   const [jobs, setJobs] = useState([]);
   const [activeJobs, setActiveJobs] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
+        setCurrentUser(user);
+        import('../../firebase/messaging').then(({ requestNotificationPermission }) => {
+          requestNotificationPermission(user.uid);
+        });
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {

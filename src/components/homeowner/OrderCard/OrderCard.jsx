@@ -125,7 +125,7 @@ const OrderCard = ({ order, onStatusChange, onRateClick }) => {
           </div>
         )}
 
-        {order.status === 'completed' && (
+        {order.status === 'completed' && !order.hasReview && (
           <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
             <button
               onClick={(e) => {
@@ -137,6 +137,14 @@ const OrderCard = ({ order, onStatusChange, onRateClick }) => {
               <i className="fa-solid fa-star"></i>
               Rate Provider
             </button>
+          </div>
+        )}
+        {order.status === 'completed' && order.hasReview && (
+          <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
+            <div className="flex-1 rounded-xl bg-slate-50 py-2.5 text-sm font-bold text-slate-400 flex items-center justify-center gap-2 border border-slate-100 cursor-default">
+              <i className="fa-solid fa-check text-green-500"></i>
+              Reviewed
+            </div>
           </div>
         )}
 
