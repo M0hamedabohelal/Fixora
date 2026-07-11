@@ -124,6 +124,18 @@ export default function RequestOffers() {
         createdAt: serverTimestamp()
       });
 
+      // Send Notification to Professional
+      await addDoc(collection(db, "notifications"), {
+        recipientId: offer.professionalId,
+        type: "offer_accepted",
+        title: "Offer Accepted! 🎉",
+        message: `Your offer for ${request.serviceType || "the requested service"} has been accepted! You can now start the job.`,
+        requestId: request.id,
+        offerId: offer.id,
+        read: false,
+        createdAt: serverTimestamp()
+      });
+
       // Update local state
       setOffers(offers.map(o => o.id === offer.id ? { ...o, status: 'accepted' } : o));
       setRequest(prev => ({...prev, status: 'in-progress'}));
