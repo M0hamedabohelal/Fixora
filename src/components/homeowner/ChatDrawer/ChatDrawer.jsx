@@ -42,7 +42,7 @@ const ChatDrawer = ({
               right-0
               z-[60]
               flex
-              h-screen
+              h-[100dvh]
               w-full
               max-w-[430px]
               flex-col
@@ -69,7 +69,7 @@ const ChatDrawer = ({
             </div>
 
             {/* Input */}
-            <div className="shrink-0 bg-white backdrop-blur-md border-t border-white">
+            <div className="shrink-0 bg-white backdrop-blur-md border-t border-white pb-[env(safe-area-inset-bottom)]">
               <ChatInput
                 onSendMessage={onSendMessage}
               />
