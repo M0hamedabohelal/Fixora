@@ -125,11 +125,12 @@ export default function RequestOffers() {
       });
 
       // Send Notification to Professional
+      const customerName = auth.currentUser?.displayName || "The customer";
       await addDoc(collection(db, "notifications"), {
         targetUserId: offer.professionalId,
         type: "system",
         title: "Offer Accepted! 🎉",
-        message: `Your offer for ${request.serviceType || "the requested service"} has been accepted! You can now start the job.`,
+        description: `${customerName} has accepted your offer for ${request.serviceType || "the requested service"}. You can now start the job!`,
         requestId: request.id,
         offerId: offer.id,
         isRead: false,

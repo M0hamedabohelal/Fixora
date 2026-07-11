@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../../../firebase/config";
 
 import NotificationHeader from "../../../components/homeowner/NotificationHeader/NotificationHeader";
 import NotificationTabs from "../../../components/homeowner/NotificationTabs/NotificationTabs";
@@ -15,18 +17,27 @@ const ProfessionalNotifications = () => {
 
   // Fetch notifications
   useEffect(() => {
-    const fetchNotifs = async () => {
-      try {
-        setLoading(true);
-        const data = await getNotifications();
-        setNotifications(data);
-      } catch (error) {
-        toast.error("Failed to fetch notifications");
-      } finally {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const fetchNotifs = async () => {
+          try {
+            setLoading(true);
+            const data = await getNotifications();
+            setNotifications(data);
+          } catch (error) {
+            toast.error("Failed to fetch notifications");
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchNotifs();
+      } else {
+        setNotifications([]);
         setLoading(false);
       }
-    };
-    fetchNotifs();
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
   // ==============================
