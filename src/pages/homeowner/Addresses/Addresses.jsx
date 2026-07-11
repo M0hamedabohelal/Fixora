@@ -26,7 +26,7 @@ export default function Addresses() {
             </div>
             <div>
               <h3 className="font-bold text-slate-800">Home</h3>
-              <p className="text-sm text-slate-500 mt-1">123 King Fahd Rd, Al Olaya, Riyadh 12211, Saudi Arabia</p>
+              <p className="text-sm text-slate-500 mt-1">123 King Fahd Rd, Maadi, Cairo 12211, Egypt</p>
             </div>
           </div>
 
@@ -36,7 +36,7 @@ export default function Addresses() {
             </div>
             <div>
               <h3 className="font-bold text-slate-800">Office</h3>
-              <p className="text-sm text-slate-500 mt-1">456 Prince Turki St, Al Khobar 34423, Saudi Arabia</p>
+              <p className="text-sm text-slate-500 mt-1">456 Prince Turki St, Al Khobar 34423, Egypt</p>
             </div>
           </div>
         </div>

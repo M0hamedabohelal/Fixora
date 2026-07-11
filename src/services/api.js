@@ -1,0 +1,282 @@
+import { collection, doc, getDocs, getDoc, updateDoc, setDoc, deleteDoc, writeBatch, onSnapshot, query, where } from "firebase/firestore";
+import { db, auth } from "../firebase/config";
+
+import initialOrders from "../data/orders";
+import initialNotifications from "../data/notifications";
+import initialChatData from "../data/chatData";
+
+// Helper to check if Firebase is configured
+const isFirebaseConfigured = true;
+
+// ==============================
+// Fallback Local Storage Logic 
+// (Used until you add Firebase keys to .env)
+// ==============================
+const getStoredData = (key, initialData) => {
+  const stored = localStorage.getItem(key);
+  if (stored) return JSON.parse(stored);
+  localStorage.setItem(key, JSON.stringify(initialData));
+  return initialData;
+};
+const setStoredData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+const simulateDelay = (data, delay = 800) => new Promise((resolve) => setTimeout(() => resolve(data), delay));
+
+// ==============================
+// Orders API
+// ==============================
+export const getOrders = async () => {
+  if (!isFirebaseConfigured) {
+    return simulateDelay(getStoredData("fixora_orders", initialOrders));
+  }
+  
+  if (!auth.currentUser) return [];
+
+  const q = query(
+    collection(db, "orders"),
+    where("homeownerId", "==", auth.currentUser.uid)
+  );
+  
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const getOrderById = async (id) => {
+  if (!isFirebaseConfigured) {
+    const data = getStoredData("fixora_orders", initialOrders);
+    return simulateDelay(data.find((o) => String(o.id) === String(id)));
+  }
+
+  // Look for document by ID
+  try {
+    const docRef = doc(db, "orders", String(id));
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    }
+  } catch (error) {
+    console.error("Error fetching order by ID", error);
+  }
+  
+  // Fallback: search all to find matching originalId if document ID changed
+  const querySnapshot = await getDocs(collection(db, "orders"));
+  const all = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  return all.find(o => String(o.id) === String(id) || String(o.originalId) === String(id));
+};
+
+export const updateOrderStatus = async (id, newStatus) => {
+  if (!isFirebaseConfigured) {
+    const data = getStoredData("fixora_orders", initialOrders);
+    const updatedData = data.map((order) => String(order.id) === String(id) ? { ...order, status: newStatus } : order);
+    setStoredData("fixora_orders", updatedData);
+    return simulateDelay(updatedData);
+  }
+
+  // Find the exact document to update
+  const querySnapshot = await getDocs(collection(db, "orders"));
+  const docToUpdate = querySnapshot.docs.find(d => String(d.id) === String(id) || String(d.data().originalId) === String(id));
+  
+  if (docToUpdate) {
+    const docRef = doc(db, "orders", docToUpdate.id);
+    await updateDoc(docRef, { status: newStatus });
+    
+    // Also update request status if newStatus is 'completed'
+    if (newStatus === "completed" && docToUpdate.data().requestId) {
+       await updateDoc(doc(db, "requests", docToUpdate.data().requestId), { status: "completed" });
+    }
+  }
+  return getOrderById(id);
+};
+
+// ==============================
+// Notifications API
+// ==============================
+export const getNotifications = async () => {
+  if (!isFirebaseConfigured) {
+    return simulateDelay(getStoredData("fixora_notifications", initialNotifications));
+  }
+
+  if (!auth.currentUser) return [];
+
+  const q = query(
+    collection(db, "notifications"), 
+    where("targetUserId", "==", auth.currentUser.uid)
+  );
+  
+  const querySnapshot = await getDocs(q);
+  const notifs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  // Sort descending by time if possible
+  return notifs.sort((a, b) => {
+    const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+    const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+    return timeB - timeA;
+  });
+};
+
+export const markNotificationAsRead = async (id) => {
+  if (!isFirebaseConfigured) return [];
+  
+  try {
+    const docRef = doc(db, "notifications", String(id));
+    await updateDoc(docRef, { isRead: true });
+  } catch (err) {
+    console.error("Error marking notification read:", err);
+    throw err;
+  }
+  return [];
+};
+
+export const markAllNotificationsAsRead = async () => {
+  if (!isFirebaseConfigured) return [];
+
+  try {
+    const q = query(
+      collection(db, "notifications"),
+      where("targetUserId", "==", auth.currentUser.uid),
+      where("isRead", "==", false)
+    );
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    querySnapshot.docs.forEach(document => {
+      batch.update(document.ref, { isRead: true });
+    });
+    await batch.commit();
+  } catch (err) {
+    console.error("Error marking all read:", err);
+    throw err;
+  }
+  return [];
+};
+
+export const deleteNotification = async (id) => {
+  if (!isFirebaseConfigured) return [];
+
+  try {
+    const docRef = doc(db, "notifications", String(id));
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.error("Error deleting notification:", err);
+    throw err;
+  }
+  return [];
+};
+
+// ==============================
+// Chat API
+// ==============================
+export const getChatMessages = async (orderId) => {
+  if (!isFirebaseConfigured) {
+    const data = getStoredData("fixora_chats", initialChatData);
+    return simulateDelay(data[orderId] || []);
+  }
+
+  // Chats are stored in a collection "chats" where document ID is the orderId
+  // Document contains an array of "messages"
+  const docRef = doc(db, "chats", String(orderId));
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data().messages || [];
+  }
+  return [];
+};
+
+export const subscribeToChat = (orderId, callback) => {
+  if (!isFirebaseConfigured) {
+    // Fallback: poll localStorage every 2 seconds to simulate real-time
+    const intervalId = setInterval(() => {
+      const data = getStoredData("fixora_chats", initialChatData);
+      callback(data[orderId] || []);
+    }, 2000);
+    // Initial call
+    const data = getStoredData("fixora_chats", initialChatData);
+    callback(data[orderId] || []);
+    
+    // Return unsubscribe function
+    return () => clearInterval(intervalId);
+  }
+
+  // Real-time listener using Firebase onSnapshot
+  const docRef = doc(db, "chats", String(orderId));
+  const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      callback(docSnap.data().messages || []);
+    } else {
+      callback([]);
+    }
+  });
+  
+  return unsubscribe;
+};
+
+export const sendChatMessage = async (orderId, messageText) => {
+  const newMessage = {
+    id: Date.now(),
+    text: messageText,
+    sender: "user",
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  };
+
+  if (!isFirebaseConfigured) {
+    const data = getStoredData("fixora_chats", initialChatData);
+    const chat = data[orderId] || [];
+    const updatedChat = [...chat, newMessage];
+    data[orderId] = updatedChat;
+    setStoredData("fixora_chats", data);
+    return simulateDelay(updatedChat, 400);
+  }
+
+  const docRef = doc(db, "chats", String(orderId));
+  const docSnap = await getDoc(docRef);
+  let updatedChat = [];
+  
+  if (docSnap.exists()) {
+    updatedChat = [...(docSnap.data().messages || []), newMessage];
+    await updateDoc(docRef, { messages: updatedChat });
+  } else {
+    updatedChat = [newMessage];
+    await setDoc(docRef, { messages: updatedChat });
+  }
+  
+  return updatedChat;
+};
+
+// ==============================
+// Utility: Seed Database
+// ==============================
+export const seedFirebaseDatabase = async () => {
+  if (!isFirebaseConfigured) return { success: false, message: "Firebase not configured" };
+  
+  try {
+    const { setDoc } = await import("firebase/firestore");
+    
+    // 1. Seed Orders
+    for (const order of initialOrders) {
+      const orderRef = doc(db, "orders", String(order.id));
+      await setDoc(orderRef, { ...order, originalId: order.id });
+    }
+    
+    // 2. Seed Notifications
+    for (const notification of initialNotifications) {
+      const notifRef = doc(db, "notifications", String(notification.id));
+      await setDoc(notifRef, { ...notification, originalId: notification.id });
+    }
+    
+    // 3. Seed Chats
+    for (const [orderId, messages] of Object.entries(initialChatData)) {
+      const chatRef = doc(db, "chats", String(orderId));
+      await setDoc(chatRef, { messages });
+    }
+    
+    return { success: true, message: "Database seeded successfully!" };
+  } catch (error) {
+    console.error("Error seeding DB", error);
+    return { success: false, message: error.message };
+  }
+};
+
+export const resetDatabase = () => {
+  localStorage.removeItem("fixora_orders");
+  localStorage.removeItem("fixora_notifications");
+  localStorage.removeItem("fixora_chats");
+  window.location.reload();
+};

@@ -14,7 +14,7 @@ export default function ProProfileView() {
     reviewsCount: 128,
     jobsCompleted: 340,
     experience: '8 Years',
-    location: 'Riyadh, Saudi Arabia',
+    location: 'Cairo, Egypt',
     bio: 'Professional electrician with 8 years of experience in residential and commercial electrical systems. Certified and insured.',
     image: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&h=150&fit=crop&crop=faces'
   };

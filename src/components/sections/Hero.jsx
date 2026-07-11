@@ -1,5 +1,5 @@
 import { useTrail, animated } from '@react-spring/web';
-import { ArrowRight, LogIn, CheckCircle2, Wrench, Zap, Paintbrush, Hammer } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Wrench, Zap, Paintbrush, Hammer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Hero3DCard from '../3d/Hero3DCard';
 import FloatingIcon from '../3d/FloatingIcon';
@@ -18,11 +18,12 @@ export default function Hero() {
       Find trusted professionals for every home service — quickly and confidently.
     </p>,
     <div key="buttons" className="flex flex-wrap gap-4 mb-12">
-      <Link to="/register" className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl font-bold shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all hover:-translate-y-1">
-        Get Started <ArrowRight className="w-5 h-5" />
-      </Link>
-      <Link to="/login" className="flex items-center gap-2 px-8 py-4 bg-white text-primary rounded-2xl font-bold shadow-xl shadow-slate-200/50 hover:bg-slate-50 transition-all hover:-translate-y-1">
-        <LogIn className="w-5 h-5" /> Login
+      <Link to="/register" className="group relative overflow-hidden flex items-center justify-center gap-3 px-10 py-5 bg-gradient-to-r from-primary to-[#122a52] text-white rounded-2xl font-black text-lg shadow-[0_10px_40px_-10px_rgba(31,59,108,0.5)] transition-all duration-300 hover:shadow-[0_20px_50px_-15px_rgba(31,59,108,0.7)] hover:-translate-y-1 hover:scale-[1.02]">
+        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-15deg)_translateX(-150%)] group-hover:duration-1000 group-hover:[transform:skew(-15deg)_translateX(150%)] transition-all duration-1000 ease-in-out">
+          <div className="w-16 h-full bg-white/20 blur-sm" />
+        </div>
+        <span className="relative z-10 tracking-wide">Get Started</span> 
+        <ArrowRight className="w-6 h-6 relative z-10 transition-transform duration-300 group-hover:translate-x-1.5" />
       </Link>
     </div>,
     <div key="badges" className="flex flex-wrap gap-4">

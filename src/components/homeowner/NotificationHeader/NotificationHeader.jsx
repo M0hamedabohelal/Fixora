@@ -4,6 +4,7 @@ const NotificationHeader = ({
   unreadCount = 0,
   totalCount = 0,
   onMarkAllAsRead,
+  onClearAll,
 }) => {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-100 bg-white backdrop-blur rounded-b-3xl md:rounded-3xl md:mt-4 shadow-sm">
@@ -39,19 +40,35 @@ const NotificationHeader = ({
         </div>
 
         {/* Right Side */}
-        <button
-          type="button"
-          onClick={onMarkAllAsRead}
-          disabled={!unreadCount}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
-            unreadCount
-              ? "bg-blue-600 text-white hover:bg-blue-700"
-              : "cursor-not-allowed bg-gray-100 text-gray-400"
-          }`}
-        >
-          <i className="fa-solid fa-check-double"></i>
-          <span>Mark all</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onClearAll}
+            disabled={totalCount === 0}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              totalCount > 0
+                ? "bg-red-50 text-red-600 hover:bg-red-100"
+                : "cursor-not-allowed bg-gray-100 text-gray-400"
+            }`}
+          >
+            <i className="fa-solid fa-trash-can"></i>
+            <span>Clear All</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onMarkAllAsRead}
+            disabled={!unreadCount}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              unreadCount
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "cursor-not-allowed bg-gray-100 text-gray-400"
+            }`}
+          >
+            <i className="fa-solid fa-check-double"></i>
+            <span>Mark all</span>
+          </button>
+        </div>
       </div>
     </header>
   );

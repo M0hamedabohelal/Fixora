@@ -1,17 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 
-import orders from "../../../data/orders";
-import chatData from "../../../data/chatData";
+import { getOrderById, subscribeToChat, sendChatMessage } from "../../../services/api";
 
 import OrderHero from "../../../components/homeowner/OrderHero/OrderHero";
 import ProviderCard from "../../../components/homeowner/ProviderCard/ProviderCard";
 import OrderInfo from "../../../components/homeowner/OrderInfo/OrderInfo";
 import Gallery from "../../../components/homeowner/Gallery/Gallery";
 import OrderTimeline from "../../../components/homeowner/OrderTimeline/OrderTimeline";
-import OrderMap from "../../../components/homeowner/OrderMap/OrderMap";
 import ActionButtons from "../../../components/homeowner/ActionButtons/ActionButtons";
-import StickyTrackButton from "../../../components/homeowner/StickyTrackButton/StickyTrackButton";
 import ChatDrawer from "../../../components/homeowner/ChatDrawer/ChatDrawer";
 import HomeownerBottomNav from "../../../components/homeowner/HomeownerBottomNav";
 import RatingModal from "../../../components/homeowner/RatingModal/RatingModal";
@@ -19,16 +17,61 @@ import RatingModal from "../../../components/homeowner/RatingModal/RatingModal";
 const OrderDetails = () => {
   const { id } = useParams();
 
-  const order = orders.find((item) => item.id === id);
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [openChat, setOpenChat] = useState(false);
   const [openRating, setOpenRating] = useState(false);
 
-  const [messages, setMessages] = useState(
-    chatData[id] || []
-  );
+  const [messages, setMessages] = useState([]);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const orderData = await getOrderById(id);
+        setOrder(orderData);
+      } catch (error) {
+        toast.error("Failed to fetch order details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
 
-  if (!order) {
+  useEffect(() => {
+    // Subscribe to real-time chat messages
+    const unsubscribe = subscribeToChat(id, (chatData) => {
+      setMessages(chatData);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [id]);
+
+  const handleSendMessage = async (text) => {
+    try {
+      // We don't need to manually setMessages here because the real-time listener will pick it up
+      await sendChatMessage(id, text);
+    } catch (error) {
+      toast.error("Failed to send message");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F7F5F2] p-8">
+        <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
+          <div className="h-48 bg-gray-200 rounded-3xl w-full"></div>
+          <div className="h-24 bg-gray-200 rounded-3xl w-full"></div>
+          <div className="h-64 bg-gray-200 rounded-3xl w-full"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order && !loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <h2 className="text-2xl font-semibold text-red-500">
@@ -54,8 +97,6 @@ const OrderDetails = () => {
 
         <OrderTimeline order={order} />
 
-        <OrderMap order={order} />
-
         <ActionButtons
           order={order}
           onOpenChat={() => setOpenChat(true)}
@@ -69,7 +110,7 @@ const OrderDetails = () => {
         onClose={() => setOpenChat(false)}
         order={order}
         messages={messages}
-        setMessages={setMessages}
+        onSendMessage={handleSendMessage}
       />
 
       <RatingModal
@@ -78,7 +119,8 @@ const OrderDetails = () => {
         providerName={order?.provider?.name}
         onSubmit={(data) => {
           console.log("Rating submitted", data);
-          // show a toast or success message here normally
+          toast.success("Rating submitted successfully!");
+          setOpenRating(false);
         }}
       />
       <HomeownerBottomNav />

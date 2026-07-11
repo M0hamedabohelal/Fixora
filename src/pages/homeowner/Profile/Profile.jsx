@@ -1,13 +1,100 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings, MapPin, CreditCard, HelpCircle, LogOut, ChevronRight, Edit3 } from 'lucide-react';
 import HomeownerBottomNav from '../../../components/homeowner/HomeownerBottomNav';
 import BackButton from '../../../components/homeowner/BackButton';
+import { auth, db } from '../../../firebase/config';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import toast from 'react-hot-toast';
 
 export default function HomeownerProfile() {
+  const [userData, setUserData] = useState({ fullName: 'John Doe', email: 'johndoe@example.com', phone: '+20 50 123 4567', profileImage: null });
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            let initials = 'U';
+            if (data.fullName) {
+              const parts = data.fullName.trim().split(' ');
+              if (parts.length > 1) {
+                initials = (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+              } else {
+                initials = data.fullName.substring(0, 2).toUpperCase();
+              }
+            }
+            setUserData({
+              initials,
+              fullName: data.fullName || 'Homeowner',
+              location: data.location || 'Cairo, Egypt',
+              phone: data.phone || '+20 50 000 0000',
+              email: data.email || user.email,
+              profileImage: data.profileImage || null
+            });
+          }
+        });
+        return () => unsubscribeSnapshot();
+      }
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file && auth.currentUser) {
+      try {
+        // Optimistic UI update
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setUserData(prev => ({ ...prev, profileImage: reader.result }));
+        };
+        reader.readAsDataURL(file);
+
+        toast.promise(
+          (async () => {
+            const data = new FormData();
+            data.append("file", file);
+            data.append("upload_preset", "fixora_profiles");
+            data.append("cloud_name", "vxh2hpjg");
+
+            const response = await fetch("https://api.cloudinary.com/v1_1/vxh2hpjg/image/upload", {
+              method: "POST",
+              body: data,
+            });
+
+            if (!response.ok) {
+              throw new Error("Cloudinary upload failed");
+            }
+
+            const result = await response.json();
+            const downloadURL = result.secure_url;
+
+            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+              profileImage: downloadURL
+            });
+          })(),
+          {
+            loading: 'Uploading image...',
+            success: 'Profile image updated!',
+            error: (err) => `Upload failed: ${err.message}`,
+          }
+        );
+
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast.error("An error occurred while preparing the image.");
+      }
+    }
+  };
+
   const profileLinks = [
     { id: 1, icon: <MapPin className="w-5 h-5" />, title: 'Saved Addresses', subtitle: 'Manage your home addresses', path: '/addresses' },
-    { id: 2, icon: <CreditCard className="w-5 h-5" />, title: 'Payment Methods', subtitle: 'Visa, MasterCard, Apple Pay', path: '/payments' },
+    { id: 2, icon: <CreditCard className="w-5 h-5" />, title: 'Payment Methods', subtitle: 'Visa, MasterCard, Instapay', path: '/payments' },
     { id: 3, icon: <Settings className="w-5 h-5" />, title: 'App Settings', subtitle: 'Notifications, Language, Security', path: '/settings' },
     { id: 4, icon: <HelpCircle className="w-5 h-5" />, title: 'Help & Support', subtitle: 'FAQ, Contact us', path: '/support' },
   ];
@@ -28,10 +115,21 @@ export default function HomeownerProfile() {
           </div>
 
           <div className="flex flex-col items-center">
-            <div className="relative">
+            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current.click()}>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageUpload} 
+                className="hidden" 
+                accept="image/*" 
+              />
               <div className="w-24 h-24 bg-white p-1 rounded-full shadow-xl">
-                <div className="w-full h-full rounded-full bg-slate-200 overflow-hidden">
-                  <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop" alt="Profile" className="w-full h-full object-cover" />
+                <div className="w-full h-full rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-[#1f3b6c] text-3xl font-bold">
+                  {userData.profileImage ? (
+                    <img src={userData.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    userData.fullName.charAt(0).toUpperCase()
+                  )}
                 </div>
               </div>
               <button className="absolute bottom-0 right-0 w-8 h-8 bg-[#c9a765] rounded-full flex items-center justify-center text-white border-2 border-white shadow-md hover:scale-105 transition-transform">
@@ -39,9 +137,9 @@ export default function HomeownerProfile() {
               </button>
             </div>
             
-            <h2 className="mt-4 text-2xl font-bold text-white">John Doe</h2>
-            <p className="text-blue-200 text-sm font-medium mt-1">johndoe@example.com</p>
-            <p className="text-blue-200/70 text-xs mt-1">+966 50 123 4567</p>
+            <h2 className="mt-4 text-2xl font-bold text-white">{userData.fullName}</h2>
+            <p className="text-blue-200 text-sm font-medium mt-1">{userData.email}</p>
+            <p className="text-blue-200/70 text-xs mt-1">{userData.phone}</p>
           </div>
         </div>
       </div>

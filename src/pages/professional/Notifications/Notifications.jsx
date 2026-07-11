@@ -1,41 +1,33 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import NotificationHeader from "../../../components/homeowner/NotificationHeader/NotificationHeader";
 import NotificationTabs from "../../../components/homeowner/NotificationTabs/NotificationTabs";
 import NotificationList from "../../../components/homeowner/NotificationList/NotificationList";
 import ProfessionalBottomNav from "../../../components/professional/ProfessionalBottomNav";
 
-const initialNotifications = [
-  {
-    id: 1,
-    type: "request",
-    title: "New Plumbing Request",
-    description: "John Doe needs help with a leaking pipe in Al Nuzha.",
-    time: "2 mins ago",
-    isRead: false,
-  },
-  {
-    id: 2,
-    type: "payment",
-    title: "Payment Received",
-    description: "You have received $120.00 for the completed job #1042.",
-    time: "2 hours ago",
-    isRead: false,
-  },
-  {
-    id: 3,
-    type: "system",
-    title: "Profile Approved",
-    description: "Your verification documents have been approved successfully.",
-    time: "1 day ago",
-    isRead: true,
-  },
-];
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } from "../../../services/api";
+import toast from "react-hot-toast";
 
 const ProfessionalNotifications = () => {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch notifications
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        setLoading(true);
+        const data = await getNotifications();
+        setNotifications(data);
+      } catch (error) {
+        toast.error("Failed to fetch notifications");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifs();
+  }, []);
 
   // ==============================
   // Unread Count
@@ -107,38 +99,48 @@ const ProfessionalNotifications = () => {
   // Mark As Read
   // ==============================
 
-  const handleRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              isRead: true,
-            }
-          : item
-      )
-    );
+  const handleRead = async (id) => {
+    try {
+      const updated = await markNotificationAsRead(id);
+      setNotifications(updated);
+    } catch (error) {
+      toast.error("Failed to update notification");
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const updated = await markAllNotificationsAsRead();
+      setNotifications(updated);
+      toast.success("All caught up!");
+    } catch (error) {
+      toast.error("Failed to update notifications");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const updated = await deleteNotification(id);
+      setNotifications(updated);
+      toast.success("Notification deleted");
+    } catch (error) {
+      toast.error("Failed to delete notification");
+    }
   };
 
   // ==============================
-  // Mark All As Read
+  // Delete All Notifications
   // ==============================
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((item) => ({
-        ...item,
-        isRead: true,
-      }))
-    );
-  };
-
-  // ==============================
-  // Delete Notification
-  // ==============================
-
-  const handleDelete = (id) => {
-    setNotifications((prev) => prev.filter((item) => item.id !== id));
+  const handleClearAll = async () => {
+    if (!window.confirm("Are you sure you want to clear all notifications?")) return;
+    try {
+      await Promise.all(notifications.map(n => deleteNotification(n.id)));
+      toast.success("All notifications cleared");
+    } catch (error) {
+      console.warn("Could not clear all", error);
+      toast.error("Failed to clear some notifications");
+    }
   };
 
   return (
@@ -148,6 +150,7 @@ const ProfessionalNotifications = () => {
           unreadCount={unreadCount}
           totalCount={notifications.length}
           onMarkAllAsRead={handleMarkAllAsRead}
+          onClearAll={handleClearAll}
         />
 
         <NotificationTabs

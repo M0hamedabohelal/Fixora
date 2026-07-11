@@ -19,7 +19,7 @@ export default function ProSettings() {
         <div className="bg-white rounded-3xl p-2 shadow-sm border border-slate-100">
           {[
             { icon: <Clock className="w-5 h-5" />, title: 'Working Hours', desc: '09:00 AM - 05:00 PM' },
-            { icon: <Map className="w-5 h-5" />, title: 'Service Area', desc: 'Riyadh, 30km radius' },
+            { icon: <Map className="w-5 h-5" />, title: 'Service Area', desc: 'Cairo, 30km radius' },
             { icon: <Briefcase className="w-5 h-5" />, title: 'Offered Services', desc: 'Plumbing, Pipe Fitting' },
           ].map((item, idx) => (
             <React.Fragment key={idx}>

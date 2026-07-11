@@ -1,5 +1,6 @@
-import { useState } from "react";
-import initialOrders from "../../../data/orders";
+import { useState, useEffect } from "react";
+import { getOrders, updateOrderStatus } from "../../../services/api";
+import toast from "react-hot-toast";
 
 import OrderCard from "../../../components/homeowner/OrderCard/OrderCard";
 import OrderTabs from "../../../components/homeowner/OrderTabs/OrderTabs";
@@ -10,15 +11,33 @@ import RatingModal from "../../../components/homeowner/RatingModal/RatingModal";
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const [localOrders, setLocalOrders] = useState(initialOrders);
+  const [localOrders, setLocalOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [ratingOrder, setRatingOrder] = useState(null);
 
-  const handleStatusChange = (id, newStatus) => {
-    setLocalOrders((prev) =>
-      prev.map((order) =>
-        order.id === id ? { ...order, status: newStatus } : order
-      )
-    );
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const data = await getOrders();
+        setLocalOrders(data);
+      } catch (error) {
+        toast.error("Failed to fetch orders");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await updateOrderStatus(id, newStatus);
+      setLocalOrders(prev => prev.map(order => String(order.id) === String(id) ? { ...order, status: newStatus } : order));
+      toast.success("Order status updated!");
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
   };
 
   const filteredOrders =
@@ -58,14 +77,36 @@ const Orders = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
 
-          {filteredOrders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              onStatusChange={handleStatusChange}
-              onRateClick={(orderToRate) => setRatingOrder(orderToRate)}
-            />
-          ))}
+          {loading ? (
+            // Loading Skeletons
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm animate-pulse">
+                <div className="flex justify-between mb-4">
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                </div>
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-20 bg-gray-200 rounded mb-4"></div>
+                <div className="flex gap-2">
+                  <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))
+          ) : filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onStatusChange={handleStatusChange}
+                onRateClick={(orderToRate) => setRatingOrder(orderToRate)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full py-12 text-center text-gray-500">
+              No orders found.
+            </div>
+          )}
 
         </div>
 

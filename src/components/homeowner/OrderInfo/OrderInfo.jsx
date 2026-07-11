@@ -48,7 +48,7 @@ const OrderInfo = ({ order }) => {
           <p className="text-sm text-gray-500">Price</p>
 
           <h3 className="mt-1 font-semibold text-[#12376B]">
-            {order.price} {order.currency}
+            {order.price} EGP
           </h3>
         </div>
 

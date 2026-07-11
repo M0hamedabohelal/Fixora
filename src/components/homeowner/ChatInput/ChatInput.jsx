@@ -1,41 +1,13 @@
 import { useState } from "react";
 
-const ChatInput = ({ messages, setMessages }) => {
+const ChatInput = ({ onSendMessage }) => {
   const [text, setText] = useState("");
 
   const handleSend = () => {
     if (!text.trim()) return;
 
-    const newMessage = {
-      id: Date.now(),
-      sender: "customer",
-      type: "text",
-      message: text,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setMessages([...messages, newMessage]);
+    onSendMessage(text);
     setText("");
-
-    // Auto Reply (Static Demo)
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          sender: "provider",
-          type: "text",
-          message: "Thanks for your message. I'll reply as soon as possible 👋",
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
-    }, 1200);
   };
 
   const handleKeyDown = (e) => {

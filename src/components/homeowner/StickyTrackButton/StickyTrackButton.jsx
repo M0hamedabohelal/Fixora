@@ -37,7 +37,7 @@ const StickyTrackButton = ({ order }) => {
           </p>
 
           <h3 className="text-2xl font-bold text-[#12376B]">
-            {order.price} {order.currency}
+            {order.price} EGP
           </h3>
         </div>
 

@@ -93,7 +93,7 @@ const OrderCard = ({ order, onStatusChange, onRateClick }) => {
             </span>
 
             <span className="text-lg font-bold text-[#12376B]">
-              {order.price} {order.currency}
+              {order.price} EGP
             </span>
 
           </div>

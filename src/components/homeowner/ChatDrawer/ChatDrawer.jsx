@@ -9,7 +9,7 @@ const ChatDrawer = ({
   onClose,
   order,
   messages,
-  setMessages,
+  onSendMessage,
 }) => {
   if (!order) return null;
 
@@ -71,8 +71,7 @@ const ChatDrawer = ({
             {/* Input */}
             <div className="shrink-0 bg-white backdrop-blur-md border-t border-white">
               <ChatInput
-                messages={messages}
-                setMessages={setMessages}
+                onSendMessage={onSendMessage}
               />
             </div>
           </motion.aside>

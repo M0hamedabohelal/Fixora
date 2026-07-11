@@ -16,7 +16,8 @@ const NotificationCard = ({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-3xl border bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
+      onClick={() => onRead?.(id)}
+      className={`group relative overflow-hidden rounded-3xl border bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer ${
         isRead
           ? "border-gray-100"
           : "border-blue-200 bg-blue-50/40"
@@ -32,10 +33,7 @@ const NotificationCard = ({
         <NotificationIcon type={type} />
 
         {/* Content */}
-        <div
-          className="flex-1 cursor-pointer"
-          onClick={() => onRead?.(id)}
-        >
+        <div className="flex-1">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-gray-900">
               {title}
@@ -62,7 +60,10 @@ const NotificationCard = ({
 
           <button
             type="button"
-            onClick={() => onDelete?.(id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(id);
+            }}
             className="rounded-xl p-2 text-red-500 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-red-50"
           >
             <i className="fa-solid fa-trash text-base"></i>

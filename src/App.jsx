@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 // Pages
 import Home from './pages/Home';
-import Register from './pages/auth/Register';
-import Login from './pages/auth/Login';
+import Auth from './pages/auth/Auth';
 
 // Homeowner Pages
 import HomeownerDashboard from './pages/homeowner/HomeownerDashboard';
@@ -13,6 +13,7 @@ import Orders from './pages/homeowner/Orders/Orders';
 import OrderDetails from './pages/homeowner/OrderDetails/OrderDetails';
 import Notifications from './pages/homeowner/Notifications/Notifications';
 import Chat from './pages/homeowner/Chat/Chat';
+import RequestOffers from './pages/homeowner/RequestOffers/RequestOffers';
 
 // Homeowner Pages
 import HomeownerProfile from './pages/homeowner/Profile/Profile';
@@ -37,15 +38,17 @@ import ProfessionalChat from './pages/professional/Chat/ProfessionalChat';
 function App() {
   return (
     <Router>
+      <Toaster position="top-center" />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Auth />} />
+        <Route path="/login" element={<Auth />} />
         
         <Route path="/dashboard" element={<HomeownerDashboard />} />
         <Route path="/create-request" element={<CreateRequest />} />
         <Route path="/homeowner/orders" element={<Orders />} />
         <Route path="/homeowner/orders/:id" element={<OrderDetails />} />
+        <Route path="/homeowner/request/:id/offers" element={<RequestOffers />} />
         <Route path="/homeowner/notifications" element={<Notifications />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/checkout" element={<Checkout />} />
