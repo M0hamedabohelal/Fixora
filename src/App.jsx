@@ -26,6 +26,7 @@ import ProProfileView from './pages/homeowner/ProProfileView/ProProfileView';
 
 // Professional Pages
 import ProfessionalDashboard from './pages/professional/ProfessionalDashboard';
+import ProfessionalJobs from './pages/professional/Jobs/ProfessionalJobs';
 import ProfessionalProfile from './pages/professional/Profile/Profile';
 import ProfessionalNotifications from './pages/professional/Notifications/Notifications';
 import Portfolio from './pages/professional/Portfolio/Portfolio';
@@ -61,6 +62,7 @@ function App() {
         <Route path="/support" element={<Support />} />
 
         <Route path="/pro-dashboard" element={<ProfessionalDashboard />} />
+        <Route path="/pro-jobs" element={<ProfessionalJobs />} />
         <Route path="/pro-profile" element={<ProfessionalProfile />} />
         <Route path="/pro-notifications" element={<ProfessionalNotifications />} />
         <Route path="/pro-portfolio" element={<Portfolio />} />

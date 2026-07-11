@@ -6,6 +6,28 @@ import { auth, db } from '../../../firebase/config';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
+const ChatAvatar = ({ src, name, className }) => {
+  const [error, setError] = useState(false);
+  const isInvalid = !src || error || typeof src !== 'string' || src.trim() === '' || src.includes('via.placeholder');
+  
+  if (isInvalid) {
+    return (
+      <div className={`${className} bg-slate-200 flex items-center justify-center text-[#1f3b6c] font-bold`} style={{border: 'none'}}>
+        {name ? name.charAt(0).toUpperCase() : 'U'}
+      </div>
+    );
+  }
+  
+  return (
+    <img 
+      src={src} 
+      alt={name} 
+      className={className}
+      onError={() => setError(true)}
+    />
+  );
+};
+
 export default function ProfessionalChat() {
   const [activeChat, setActiveChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
@@ -132,7 +154,7 @@ export default function ProfessionalChat() {
               <ChevronLeft className="w-6 h-6" />
             </button>
             <div className="relative">
-              <img src={activeChat.avatar} alt={activeChat.name} className="w-10 h-10 rounded-full border-2 border-white object-cover bg-white" />
+              <ChatAvatar src={activeChat.avatar} name={activeChat.name} className="w-10 h-10 rounded-full border-2 border-white object-cover bg-white" />
               {activeChat.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1f3b6c]"></div>}
             </div>
             <div>
@@ -252,7 +274,7 @@ export default function ProfessionalChat() {
                   className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer rounded-2xl group"
                 >
                   <div className="relative shrink-0">
-                    <img src={chat.avatar} alt={chat.name} className="w-14 h-14 rounded-full object-cover border border-slate-200 group-hover:border-[#1f3b6c] transition-colors bg-white" />
+                    <ChatAvatar src={chat.avatar} name={chat.name} className="w-14 h-14 rounded-full object-cover border border-slate-200 group-hover:border-[#1f3b6c] transition-colors bg-white" />
                     {chat.online && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>}
                   </div>
                   

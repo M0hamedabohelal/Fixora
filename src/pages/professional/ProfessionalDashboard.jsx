@@ -12,10 +12,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 export default function ProfessionalDashboard() {
   const [activeFilter, setActiveFilter] = useState('All');
-  const [viewMode, setViewMode] = useState('new_requests'); // 'new_requests' or 'active_jobs'
   const [userData, setUserData] = useState({ fullName: 'Ahmed Al-Ghamdi', location: 'Cairo, Nasr City', profileImage: null });
   const [jobs, setJobs] = useState([]);
-  const [activeJobs, setActiveJobs] = useState([]);
+  const [myOrders, setMyOrders] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -42,14 +41,14 @@ export default function ProfessionalDashboard() {
           }
         });
 
-        // Listen for active orders assigned to this professional
-        const qOrders = query(collection(db, 'orders'), where('professionalId', '==', user.uid), where('status', '==', 'active'));
+        // Listen for all orders assigned to this professional
+        const qOrders = query(collection(db, 'orders'), where('professionalId', '==', user.uid));
         const unsubscribeOrders = onSnapshot(qOrders, (snapshot) => {
-          const fetchedActive = [];
+          const fetchedOrders = [];
           snapshot.forEach(docSnap => {
-            fetchedActive.push({ id: docSnap.id, ...docSnap.data() });
+            fetchedOrders.push({ id: docSnap.id, ...docSnap.data() });
           });
-          setActiveJobs(fetchedActive);
+          setMyOrders(fetchedOrders);
         });
 
         return () => {
@@ -219,30 +218,9 @@ export default function ProfessionalDashboard() {
 
       <main className="max-w-4xl mx-auto px-4 md:px-8 -mt-6 relative z-20">
         
-        {/* Toggle Mode */}
-        <div className="bg-white rounded-2xl p-1 shadow-lg border border-slate-100 flex items-center mb-6">
-          <button 
-            onClick={() => setViewMode('new_requests')}
-            className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all ${viewMode === 'new_requests' ? 'bg-[#1f3b6c] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-          >
-            New Requests
-          </button>
-          <button 
-            onClick={() => setViewMode('active_jobs')}
-            className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all ${viewMode === 'active_jobs' ? 'bg-[#c9a765] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'} flex items-center justify-center gap-2`}
-          >
-            Active Jobs
-            {activeJobs.length > 0 && (
-              <span className="bg-white text-[#c9a765] w-5 h-5 rounded-full flex items-center justify-center text-xs font-black">
-                {activeJobs.length}
-              </span>
-            )}
-          </button>
-        </div>
 
-        {viewMode === 'new_requests' && (
-          <>
-            {/* High Demand Banner */}
+
+        {/* High Demand Banner */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -355,75 +333,6 @@ export default function ProfessionalDashboard() {
                 </motion.div>
               )}
             </div>
-          </>
-        )}
-
-        {viewMode === 'active_jobs' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-bold text-[#1f3b6c] mb-4">Your Active Jobs</h2>
-            
-            {activeJobs.length > 0 ? (
-              activeJobs.map((job, index) => (
-                <motion.div 
-                  key={job.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white rounded-3xl overflow-hidden shadow-md border border-slate-100 p-5"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-[#c9a765]/10 rounded-full flex items-center justify-center text-[#c9a765]">
-                        <Briefcase className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-[#1f3b6c] text-lg">Order #{job.id.substring(0, 5)}</h3>
-                        <p className="text-slate-500 text-sm">Status: In Progress</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-black text-[#1f3b6c]">{job.price}</div>
-                      <div className="text-xs font-bold text-slate-400">EGP</div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-[#f8fbff] rounded-2xl p-4 mb-6 border border-blue-50">
-                    <p className="text-slate-600 text-sm mb-2">
-                      The Homeowner has paid for this job. The funds are held safely by Fixora Escrow. 
-                      Please perform the service, and mark as complete when done.
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => handleCompleteJob(job.id, job.price, job.requestId)}
-                      className="flex-1 bg-[#1f3b6c] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#1a325b] transition-all shadow-lg shadow-[#1f3b6c]/20"
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      Complete Job
-                    </button>
-                    <Link 
-                      to={`/pro-chat`}
-                      className="w-14 bg-slate-100 text-[#1f3b6c] py-3.5 rounded-xl font-bold flex items-center justify-center hover:bg-slate-200 transition-all"
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                    </Link>
-                  </div>
-                </motion.div>
-              ))
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-16 text-slate-500 font-medium bg-white rounded-3xl border border-slate-100 shadow-sm"
-              >
-                <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p>You have no active jobs in progress.</p>
-                <p className="text-xs mt-1">Submit offers on new requests to get hired!</p>
-              </motion.div>
-            )}
-          </div>
-        )}
 
       </main>
 
