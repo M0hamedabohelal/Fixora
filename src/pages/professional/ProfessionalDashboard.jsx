@@ -160,9 +160,7 @@ export default function ProfessionalDashboard() {
               </div>
             </div>
             
-            <div className="flex flex-col items-center absolute left-1/2 -translate-x-1/2 top-4">
-              <div className="mb-1 text-white font-black text-xl tracking-wider drop-shadow-md">FIXORA</div>
-            </div>
+            {/* Removed absolute FIXORA text to prevent overlap with long names */}
             
             <div className="flex gap-3 relative z-10">
               <Link to="/pro-chat" className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition relative">

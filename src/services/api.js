@@ -219,15 +219,16 @@ export const sendChatMessage = async (order, messageText) => {
   await addDoc(messagesRef, {
     senderId: auth.currentUser.uid,
     text: messageText,
-    timestamp: serverTimestamp() // Import from firestore if not imported
+    timestamp: serverTimestamp()
   });
 
   // Update last message in the parent chat document
   const chatDocRef = doc(db, 'chats', chatId);
-  await updateDoc(chatDocRef, {
+  await setDoc(chatDocRef, {
     lastMessage: messageText,
-    lastMessageTime: serverTimestamp()
-  });
+    lastMessageTime: serverTimestamp(),
+    participants: [order.homeownerId, order.professionalId]
+  }, { merge: true });
   
   return []; // onSnapshot will update the UI
 };

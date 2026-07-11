@@ -210,42 +210,82 @@ export default function Auth() {
       
       {/* Left Side - Image/Branding (Hidden on mobile) */}
       <div className="hidden lg:flex w-1/2 relative bg-[#1f3b6c] items-center justify-center overflow-hidden">
-        {/* Background Image with Overlay */}
+        {/* Animated Background Elements */}
         <div className="absolute inset-0 z-0">
-          <img src="/hero-bg.jpg" alt="Home Services" className="w-full h-full object-cover opacity-40 mix-blend-luminosity" />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-40 -left-40 w-96 h-96 bg-[#c9a765] rounded-full mix-blend-multiply filter blur-[128px] opacity-40"
+          ></motion.div>
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: [0.2, 0.4, 0.2],
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute top-1/2 -right-40 w-[30rem] h-[30rem] bg-blue-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-30"
+          ></motion.div>
+          
+          <img src="/hero-bg.jpg" alt="Home Services" className="w-full h-full object-cover opacity-30 mix-blend-luminosity" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1f3b6c] via-[#1f3b6c]/80 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1f3b6c]/90 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1f3b6c] via-[#1f3b6c]/90 to-transparent"></div>
         </div>
         
         {/* Floating Elements / Content */}
         <div className="relative z-10 p-16 text-white max-w-2xl flex flex-col justify-center h-full">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.3 } }
+            }}
           >
-            <div className="w-20 h-2 bg-[#c9a765] rounded-full mb-8"></div>
-            <h1 className="text-5xl xl:text-6xl font-extrabold mb-6 leading-tight">
-              Expert Services, <br/>
-              <span className="text-[#c9a765]">Right at your Doorstep.</span>
-            </h1>
-            <p className="text-lg xl:text-xl text-slate-300 leading-relaxed font-medium max-w-lg mb-12">
-              Join Fixora today and connect with thousands of verified professionals ready to help you with your home needs. Safe, fast, and reliable.
-            </p>
+            <motion.div 
+              variants={{ hidden: { opacity: 0, x: -30 }, visible: { opacity: 1, x: 0 } }}
+              className="w-20 h-2 bg-[#c9a765] rounded-full mb-8 shadow-[0_0_15px_rgba(201,167,101,0.5)]"
+            ></motion.div>
             
-            <div className="flex gap-6 items-center">
+            <motion.h1 
+              variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
+              className="text-5xl xl:text-6xl font-extrabold mb-6 leading-tight tracking-tight"
+            >
+              Expert Services, <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c9a765] to-[#f3dca6]">Right at your Doorstep.</span>
+            </motion.h1>
+            
+            <motion.p 
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+              className="text-lg xl:text-xl text-slate-300 leading-relaxed font-medium max-w-lg mb-12 border-l-4 border-slate-600/50 pl-6"
+            >
+              Join Fixora today and connect with thousands of verified professionals ready to help you with your home needs. Safe, fast, and reliable.
+            </motion.p>
+            
+            <motion.div 
+              variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+              className="flex gap-6 items-center bg-white/5 backdrop-blur-md p-4 rounded-3xl border border-white/10 shadow-xl w-fit"
+            >
               <div className="flex -space-x-4">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="w-12 h-12 rounded-full border-2 border-[#1f3b6c] bg-slate-200 overflow-hidden">
+                {[1,2,3,4].map((i, index) => (
+                  <motion.div 
+                    key={i} 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.8 + (index * 0.1) }}
+                    className="w-12 h-12 rounded-full border-2 border-[#1f3b6c] bg-slate-200 overflow-hidden shadow-md"
+                  >
                     <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="User" />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
               <div className="text-sm font-semibold">
-                <span className="text-[#c9a765] text-lg font-bold">50,000+</span> <br/>
-                Happy Users
+                <span className="text-[#c9a765] text-xl font-bold tracking-wider">50,000+</span> <br/>
+                <span className="text-slate-300">Happy Users</span>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
