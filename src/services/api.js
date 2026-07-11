@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, getDoc, updateDoc, setDoc, deleteDoc, writeBatch, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, getDocs, getDoc, updateDoc, setDoc, deleteDoc, writeBatch, onSnapshot, query, where, serverTimestamp, addDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/config";
 
 import initialOrders from "../data/orders";
@@ -180,64 +180,56 @@ export const getChatMessages = async (orderId) => {
   return [];
 };
 
-export const subscribeToChat = (orderId, callback) => {
-  if (!isFirebaseConfigured) {
-    // Fallback: poll localStorage every 2 seconds to simulate real-time
-    const intervalId = setInterval(() => {
-      const data = getStoredData("fixora_chats", initialChatData);
-      callback(data[orderId] || []);
-    }, 2000);
-    // Initial call
-    const data = getStoredData("fixora_chats", initialChatData);
-    callback(data[orderId] || []);
-    
-    // Return unsubscribe function
-    return () => clearInterval(intervalId);
-  }
+export const subscribeToChat = (order, callback) => {
+  if (!isFirebaseConfigured || !order) return () => {};
 
-  // Real-time listener using Firebase onSnapshot
-  const docRef = doc(db, "chats", String(orderId));
-  const unsubscribe = onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      callback(docSnap.data().messages || []);
-    } else {
-      callback([]);
-    }
+  const chatId = `${order.requestId}_${order.professionalId}`;
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  const q = query(messagesRef);
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort ascending by time
+    msgs.sort((a, b) => {
+      const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
+      const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
+      return timeA - timeB;
+    });
+
+    // Map senderId to "customer" or "provider" for the Drawer UI
+    const formattedMsgs = msgs.map(m => ({
+      ...m,
+      sender: m.senderId === order.homeownerId ? "customer" : "provider",
+      // Keep old timestamp string logic if needed by UI, or map Date
+      timeString: m.timestamp?.toDate ? m.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
+    }));
+
+    callback(formattedMsgs);
   });
   
   return unsubscribe;
 };
 
-export const sendChatMessage = async (orderId, messageText) => {
-  const newMessage = {
-    id: Date.now(),
+export const sendChatMessage = async (order, messageText) => {
+  if (!isFirebaseConfigured || !order || !auth.currentUser) return [];
+
+  const chatId = `${order.requestId}_${order.professionalId}`;
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  
+  await addDoc(messagesRef, {
+    senderId: auth.currentUser.uid,
     text: messageText,
-    sender: "user",
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  };
+    timestamp: serverTimestamp() // Import from firestore if not imported
+  });
 
-  if (!isFirebaseConfigured) {
-    const data = getStoredData("fixora_chats", initialChatData);
-    const chat = data[orderId] || [];
-    const updatedChat = [...chat, newMessage];
-    data[orderId] = updatedChat;
-    setStoredData("fixora_chats", data);
-    return simulateDelay(updatedChat, 400);
-  }
-
-  const docRef = doc(db, "chats", String(orderId));
-  const docSnap = await getDoc(docRef);
-  let updatedChat = [];
+  // Update last message in the parent chat document
+  const chatDocRef = doc(db, 'chats', chatId);
+  await updateDoc(chatDocRef, {
+    lastMessage: messageText,
+    lastMessageTime: serverTimestamp()
+  });
   
-  if (docSnap.exists()) {
-    updatedChat = [...(docSnap.data().messages || []), newMessage];
-    await updateDoc(docRef, { messages: updatedChat });
-  } else {
-    updatedChat = [newMessage];
-    await setDoc(docRef, { messages: updatedChat });
-  }
-  
-  return updatedChat;
+  return []; // onSnapshot will update the UI
 };
 
 // ==============================

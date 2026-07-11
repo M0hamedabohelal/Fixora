@@ -41,19 +41,20 @@ const OrderDetails = () => {
   }, [id]);
 
   useEffect(() => {
+    if (!order) return;
     // Subscribe to real-time chat messages
-    const unsubscribe = subscribeToChat(id, (chatData) => {
+    const unsubscribe = subscribeToChat(order, (chatData) => {
       setMessages(chatData);
     });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [id]);
+  }, [order]);
 
   const handleSendMessage = async (text) => {
     try {
       // We don't need to manually setMessages here because the real-time listener will pick it up
-      await sendChatMessage(id, text);
+      await sendChatMessage(order, text);
     } catch (error) {
       toast.error("Failed to send message");
     }
