@@ -124,9 +124,9 @@ export default function Chat() {
 
   if (activeChat) {
     return (
-      <div className="min-h-screen bg-[#F7F5F2] flex flex-col font-sans">
+      <div className="h-[100dvh] bg-[#F7F5F2] flex flex-col font-sans overflow-hidden">
         {/* Chat Header */}
-        <div className="bg-[#1f3b6c] text-white px-4 py-4 flex items-center justify-between shadow-md relative z-20">
+        <div className="bg-[#1f3b6c] text-white px-4 py-4 flex items-center justify-between shadow-md relative z-20 shrink-0">
           <div className="flex items-center gap-3">
             <button onClick={() => setActiveChat(null)} className="p-2 -ml-2 hover:bg-white/10 rounded-xl transition">
               <ChevronLeft className="w-6 h-6" />
@@ -147,7 +147,7 @@ export default function Chat() {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 hide-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 hide-scrollbar">
           {isLoadingMessages ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="w-8 h-8 text-[#c9a765] animate-spin" />
@@ -177,7 +177,7 @@ export default function Chat() {
         </div>
 
         {/* Chat Input */}
-        <form onSubmit={handleSendMessage} className="bg-white border-t border-slate-100 p-4 fixed bottom-0 w-full z-20">
+        <form onSubmit={handleSendMessage} className="bg-white border-t border-slate-100 p-4 w-full shrink-0 z-20">
           <div className="max-w-md mx-auto flex items-end gap-2">
             <button type="button" className="p-3 text-slate-400 hover:bg-slate-50 rounded-full transition shrink-0">
               <Paperclip className="w-5 h-5" />

@@ -8,20 +8,20 @@ const NotificationHeader = ({
 }) => {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-100 bg-white backdrop-blur rounded-b-3xl md:rounded-3xl md:mt-4 shadow-sm">
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-5 py-4 gap-4">
         {/* Left Side */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <BackButton />
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 shrink-0">
             <i className="fa-solid fa-bell text-xl text-blue-600"></i>
           </div>
 
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold text-gray-900 truncate">
               Notifications
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-500 truncate">
               {unreadCount > 0 ? (
                 <>
                   <span className="font-semibold text-blue-600">
@@ -33,33 +33,33 @@ const NotificationHeader = ({
                   </span>
                 </>
               ) : (
-                "All notifications have been read"
+                "All read"
               )}
             </p>
           </div>
         </div>
 
         {/* Right Side */}
-        <div className="flex items-center gap-2">
+        <div className="flex w-full md:w-auto items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClearAll}
             disabled={totalCount === 0}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+            className={`flex flex-1 md:flex-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
               totalCount > 0
                 ? "bg-red-50 text-red-600 hover:bg-red-100"
                 : "cursor-not-allowed bg-gray-100 text-gray-400"
             }`}
           >
             <i className="fa-solid fa-trash-can"></i>
-            <span>Clear All</span>
+            <span>Clear</span>
           </button>
 
           <button
             type="button"
             onClick={onMarkAllAsRead}
             disabled={!unreadCount}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+            className={`flex flex-1 md:flex-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
               unreadCount
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "cursor-not-allowed bg-gray-100 text-gray-400"

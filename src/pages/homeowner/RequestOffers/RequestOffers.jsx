@@ -129,6 +129,7 @@ export default function RequestOffers() {
       setRequest(prev => ({...prev, status: 'in-progress'}));
       
       toast.success("Offer accepted successfully!");
+      navigate('/homeowner/orders');
     } catch (error) {
       console.error(error);
       toast.error("Failed to accept offer");
