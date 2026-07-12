@@ -4,7 +4,7 @@ import { Settings, LogOut, ChevronRight, Edit3, Briefcase, Wallet, Star, ShieldC
 import ProfessionalBottomNav from '../../../components/professional/ProfessionalBottomNav';
 import BackButton from '../../../components/homeowner/BackButton';
 import { auth, db } from '../../../firebase/config';
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
 
@@ -26,6 +26,8 @@ export default function ProfessionalProfile() {
     skills: ['Pipe Repair', 'Leak Detection'],
     availability: 'Mon - Sat (8:00 AM - 6:00 PM)'
   });
+  
+  const [stats, setStats] = useState({ completedJobs: 0, successRate: 0 });
   
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
@@ -50,7 +52,9 @@ export default function ProfessionalProfile() {
               availability: data.availability || 'Mon - Sat (8:00 AM - 6:00 PM)',
               yearsExp: data.yearsExp || 0,
               completedJobs: data.completedJobs || 0,
-              successRate: data.successRate || 0
+              successRate: data.successRate || 0,
+              rating: data.rating || 0,
+              reviewsCount: data.reviewsCount || data.reviewCount || 0
             };
             setUserData(newData);
             // Only update editData if not currently editing
@@ -60,7 +64,31 @@ export default function ProfessionalProfile() {
             } : prev);
           }
         });
-        return () => unsubscribeSnapshot();
+
+        // Calculate stats dynamically from actual orders
+        const qOrders = query(
+          collection(db, 'orders'), 
+          where('professionalId', '==', user.uid)
+        );
+        const unsubscribeOrders = onSnapshot(qOrders, (snapshot) => {
+          let totalJobs = snapshot.size;
+          let completedCount = 0;
+          snapshot.forEach(docSnap => {
+             if (docSnap.data().status === 'completed') {
+                completedCount++;
+             }
+          });
+          
+          setStats({
+             completedJobs: completedCount,
+             successRate: totalJobs > 0 ? Math.round((completedCount / totalJobs) * 100) : 0
+          });
+        });
+
+        return () => {
+          unsubscribeSnapshot();
+          unsubscribeOrders();
+        };
       }
     });
     return () => unsubscribeAuth();
@@ -159,6 +187,7 @@ export default function ProfessionalProfile() {
     { id: 2, icon: <Wallet className="w-5 h-5" />, title: 'Earnings & Payments', subtitle: 'Withdrawals, Bank details', path: '/pro-wallet' },
     { id: 3, icon: <Settings className="w-5 h-5" />, title: 'Service Settings', subtitle: 'Availability, Work hours, Services', path: '/pro-settings' },
     { id: 4, icon: <ShieldCheck className="w-5 h-5" />, title: 'Verification', subtitle: 'ID, Certificates, Documents', path: '/pro-verification' },
+    { id: 5, icon: <Star className="w-5 h-5" />, title: 'My Reviews', subtitle: 'See what customers are saying', path: '/pro-reviews' },
   ];
 
   return (
@@ -206,7 +235,7 @@ export default function ProfessionalProfile() {
             <p className="text-[#c9a765] text-sm font-semibold mt-1">Senior Plumber</p>
             <div className="flex items-center gap-1 mt-2 bg-white/20 px-3 py-1 rounded-full border border-white/30 backdrop-blur-sm">
               <Star className="w-3 h-3 text-yellow-400 fill-current" />
-              <span className="text-white text-xs font-medium">4.9 (120 Reviews)</span>
+              <span className="text-white text-xs font-medium">{Number(userData.rating || 0).toFixed(1)} ({userData.reviewsCount} Reviews)</span>
             </div>
           </div>
         </div>
@@ -222,12 +251,12 @@ export default function ProfessionalProfile() {
           </div>
           <div className="w-px bg-slate-100"></div>
           <div className="text-center">
-            <p className="text-2xl font-black text-[#1f3b6c]">{userData.completedJobs || 0}</p>
+            <p className="text-2xl font-black text-[#1f3b6c]">{stats.completedJobs}</p>
             <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">Jobs Done</p>
           </div>
           <div className="w-px bg-slate-100"></div>
           <div className="text-center">
-            <p className="text-2xl font-black text-green-600">{userData.successRate || 0}%</p>
+            <p className="text-2xl font-black text-green-600">{stats.successRate}%</p>
             <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">Success</p>
           </div>
         </div>

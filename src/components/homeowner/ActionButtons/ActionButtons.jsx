@@ -1,5 +1,5 @@
 import {Link} from "react-router-dom";
-const ActionButtons = ({ order, onOpenChat, onOpenRating }) => {
+const ActionButtons = ({ order, onOpenChat, onOpenRating, onStatusChange }) => {
   const { status, provider } = order;
 
   return (
@@ -21,11 +21,23 @@ const ActionButtons = ({ order, onOpenChat, onOpenRating }) => {
         {status === "active" && (
           <Link
             to="/checkout"
+            state={{ price: order.price, serviceType: order.category || order.serviceType || 'General Service', description: order.description || order.title || 'Service booking' }}
             className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-[#c9a765] py-4 text-white font-bold transition hover:bg-[#b89551] shadow-lg mt-2"
           >
             <i className="fa-solid fa-credit-card"></i>
             Proceed to Checkout
           </Link>
+        )}
+
+        {status === "pending_completion" && onStatusChange && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => onStatusChange(order, 'completed')}
+              className="flex-1 items-center justify-center gap-2 rounded-2xl bg-green-500 py-3 text-white font-bold transition hover:bg-green-600 shadow-md shadow-green-500/20"
+            >
+              Confirm Completion
+            </button>
+          </div>
         )}
 
         {status === "completed" && (

@@ -12,10 +12,10 @@ const RatingModal = ({ isOpen, onClose, providerName, onSubmit }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-all duration-300">
       <div 
         className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl transform transition-all duration-300 scale-100"
-        dir="rtl"
+        dir="ltr"
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">تقييم الخدمة</h2>
+          <h2 className="text-xl font-bold text-gray-900">Rate Service</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <i className="fa-solid fa-xmark text-xl"></i>
           </button>
@@ -23,7 +23,7 @@ const RatingModal = ({ isOpen, onClose, providerName, onSubmit }) => {
 
         <div className="flex flex-col items-center mb-6">
           <p className="text-gray-600 mb-6 text-center text-sm md:text-base">
-            ما هو تقييمك لخدمة <span className="font-bold text-[#12376B]">{providerName}</span>؟
+            How would you rate <span className="font-bold text-[#12376B]">{providerName}</span>'s service?
           </p>
           <div className="flex gap-2 flex-row-reverse">
             {[...Array(5)].map((_, index) => {
@@ -45,22 +45,22 @@ const RatingModal = ({ isOpen, onClose, providerName, onSubmit }) => {
             })}
           </div>
           <span className="text-sm text-gray-500 mt-3 h-5">
-            {rating === 5 && 'ممتاز جداً'}
-            {rating === 4 && 'جيد جداً'}
-            {rating === 3 && 'جيد'}
-            {rating === 2 && 'مقبول'}
-            {rating === 1 && 'سيء'}
+            {rating === 5 && 'Excellent'}
+            {rating === 4 && 'Very Good'}
+            {rating === 3 && 'Good'}
+            {rating === 2 && 'Fair'}
+            {rating === 1 && 'Poor'}
           </span>
         </div>
 
         <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            أضف تعليقاً (اختياري)
+            Add a comment (Optional)
           </label>
           <textarea
             className="w-full border border-gray-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-[#c9a765] focus:border-transparent resize-none text-sm"
             rows="4"
-            placeholder="شاركنا رأيك في الخدمة المقدمة..."
+            placeholder="Share your experience with the service..."
             value={review}
             onChange={(e) => setReview(e.target.value)}
           ></textarea>
@@ -81,7 +81,7 @@ const RatingModal = ({ isOpen, onClose, providerName, onSubmit }) => {
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
         >
-          إرسال التقييم
+          Submit Review
         </button>
       </div>
     </div>

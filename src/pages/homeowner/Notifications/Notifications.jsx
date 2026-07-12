@@ -103,6 +103,13 @@ const Notifications = () => {
           (item) => item.type === "message"
         ).length,
       },
+      {
+        id: "system",
+        label: "System",
+        count: notifications.filter(
+          (item) => item.type === "system"
+        ).length,
+      },
     ],
     [notifications, unreadCount]
   );
@@ -125,6 +132,11 @@ const Notifications = () => {
         return notifications.filter(
           (item) => item.type === "message"
         );
+        
+      case "system":
+        return notifications.filter(
+          (item) => item.type === "system"
+        );
 
       default:
         return notifications;
@@ -144,8 +156,21 @@ const Notifications = () => {
       console.warn("Could not mark as read, continuing...", error);
     }
 
-    if (clickedNotif && clickedNotif.type === 'offer' && clickedNotif.requestId) {
-      navigate(`/dashboard`);
+    if (clickedNotif) {
+      if (clickedNotif.type === 'offer' && clickedNotif.requestId) {
+        navigate(`/homeowner/request/${clickedNotif.requestId}/offers`);
+      } else if (clickedNotif.type === 'payment_required' && clickedNotif.orderId) {
+        navigate('/checkout', {
+          state: {
+            price: clickedNotif.price,
+            orderId: clickedNotif.orderId,
+            serviceType: 'General Service',
+            description: 'Final payment for range service'
+          }
+        });
+      } else if (clickedNotif.type === 'system' && clickedNotif.orderId) {
+        navigate(`/homeowner/orders/${clickedNotif.orderId}`);
+      }
     }
   };
 

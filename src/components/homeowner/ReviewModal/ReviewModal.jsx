@@ -22,38 +22,15 @@ const ReviewModal = ({ isOpen, onClose, order }) => {
 
     setIsSubmitting(true);
     try {
-      // 1. Add review to reviews collection
-      await addDoc(collection(db, 'reviews'), {
-        orderId: order.id,
-        professionalId: order.professionalId,
-        homeownerId: order.homeownerId,
-        serviceName: order.service?.name || "Service",
+      const { submitReview } = await import('../../../services/api');
+      
+      await submitReview(
+        order.id,
+        order.professionalId,
+        order.homeownerId,
         rating,
-        comment,
-        createdAt: serverTimestamp()
-      });
-
-      // 2. Update professional's rating logic
-      const proRef = doc(db, 'users', order.professionalId);
-      const proDoc = await getDoc(proRef);
-      if (proDoc.exists()) {
-        const proData = proDoc.data();
-        const currentRating = parseFloat(proData.rating) || 0;
-        const currentCount = parseInt(proData.reviewCount) || 0;
-        
-        const newCount = currentCount + 1;
-        const newRating = ((currentRating * currentCount) + rating) / newCount;
-
-        await updateDoc(proRef, {
-          rating: newRating.toFixed(1),
-          reviewCount: newCount
-        });
-      }
-
-      // 3. Mark the order as reviewed so the button hides
-      await updateDoc(doc(db, 'orders', order.id), {
-        hasReview: true
-      });
+        comment
+      );
 
       // Optional callback to update UI immediately
       if (order.onReviewSubmitted) {

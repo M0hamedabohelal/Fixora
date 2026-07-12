@@ -35,6 +35,7 @@ import ProSettings from './pages/professional/Settings/ProSettings';
 import Verification from './pages/professional/Verification/Verification';
 import RequestDetails from './pages/professional/RequestDetails/RequestDetails';
 import ProfessionalChat from './pages/professional/Chat/ProfessionalChat';
+import ProfessionalReviews from './pages/professional/ProfessionalReviews';
 
 function App() {
   return (
@@ -70,6 +71,7 @@ function App() {
         <Route path="/pro-settings" element={<ProSettings />} />
         <Route path="/pro-chat" element={<ProfessionalChat />} />
         <Route path="/pro-verification" element={<Verification />} />
+        <Route path="/pro-reviews" element={<ProfessionalReviews />} />
         <Route path="/pro-request/:id" element={<RequestDetails />} />
       </Routes>
     </Router>

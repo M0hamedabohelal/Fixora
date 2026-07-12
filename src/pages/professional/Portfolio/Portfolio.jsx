@@ -64,7 +64,7 @@ export default function Portfolio() {
         
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="flex items-center justify-between mb-8">
-            <BackButton className="bg-white text-white border-white hover:bg-white" />
+            <BackButton className="bg-white/10 text-white border-white/20 hover:bg-white/20" />
             <h1 className="text-white font-bold text-xl tracking-wide">My Portfolio</h1>
             <button className="w-10 h-10 bg-white backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white hover:bg-white transition-all hover:scale-105 active:scale-95 shadow-lg">
               <Plus className="w-5 h-5" />

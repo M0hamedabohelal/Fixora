@@ -17,9 +17,24 @@ const OrderHero = ({ order }) => {
       className: "bg-red-100 text-red-700",
       icon: "fa-solid fa-circle-xmark",
     },
+    in_progress: {
+      label: "In Progress",
+      className: "bg-purple-100 text-purple-700",
+      icon: "fa-solid fa-person-digging",
+    },
+    pending_completion: {
+      label: "Pending Approval",
+      className: "bg-amber-100 text-amber-700",
+      icon: "fa-solid fa-hourglass-half",
+    },
+    awaiting_payment: {
+      label: "Awaiting Payment",
+      className: "bg-orange-100 text-orange-800",
+      icon: "fa-solid fa-wallet",
+    },
   };
 
-  const status = statusConfig[order.status];
+  const status = statusConfig[order.status] || statusConfig.active;
 
   return (
     <section className="overflow-hidden rounded-3xl bg-white shadow-sm border border-gray-100">
@@ -77,7 +92,7 @@ const OrderHero = ({ order }) => {
               </p>
 
               <h3 className="mt-1 text-xl font-bold text-[#12376B]">
-                {order.price} EGP
+                {order.finalPrice || order.price || (order.minPrice ? `${order.minPrice} - ${order.maxPrice}` : '')} {order.finalPrice || order.price || order.minPrice ? 'EGP' : 'N/A'}
               </h3>
             </div>
 

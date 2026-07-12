@@ -48,7 +48,7 @@ const OrderInfo = ({ order }) => {
           <p className="text-sm text-gray-500">Price</p>
 
           <h3 className="mt-1 font-semibold text-[#12376B]">
-            {order.price} EGP
+            {order.finalPrice || order.price || (order.minPrice ? `${order.minPrice} - ${order.maxPrice}` : '')} {order.finalPrice || order.price || order.minPrice ? 'EGP' : 'N/A'}
           </h3>
         </div>
 

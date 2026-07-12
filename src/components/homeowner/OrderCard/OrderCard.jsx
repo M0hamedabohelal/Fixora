@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const OrderCard = ({ order, onStatusChange, onRateClick }) => {
   const statusConfig = {
@@ -10,13 +10,26 @@ const OrderCard = ({ order, onStatusChange, onRateClick }) => {
       label: "Completed",
       className: "bg-green-100 text-green-700",
     },
+    in_progress: {
+      label: "In Progress",
+      className: "bg-purple-100 text-purple-700",
+    },
+    pending_completion: {
+      label: "Pending Approval",
+      className: "bg-amber-100 text-amber-700",
+    },
+    awaiting_payment: {
+      label: "Awaiting Payment",
+      className: "bg-orange-100 text-orange-800",
+    },
     cancelled: {
       label: "Cancelled",
       className: "bg-red-100 text-red-700",
     },
   };
 
-  const status = statusConfig[order.status];
+  const status = statusConfig[order.status] || statusConfig.active;
+  const navigate = useNavigate();
 
   return (
     <Link
@@ -86,6 +99,27 @@ const OrderCard = ({ order, onStatusChange, onRateClick }) => {
             <span>{order.scheduledAt}</span>
           </div>
 
+          <div className="flex flex-col gap-1 text-right">
+            {order.priceType === 'range' ? (
+              <>
+                <div className="flex items-baseline gap-1 text-[#1f3b6c] justify-end">
+                  <span className="text-xl font-black">{order.minPrice}</span>
+                  <span className="text-sm font-bold text-gray-400 mx-0.5">-</span>
+                  <span className="text-xl font-black">{order.maxPrice}</span>
+                </div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Price Range (EGP)</div>
+                {order.finalPrice && (
+                  <div className="text-sm font-bold text-green-600 mt-1">Final: {order.finalPrice} EGP</div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-[#1f3b6c]">{order.finalPrice || order.price}</span>
+                <span className="text-sm font-bold text-gray-400">EGP</span>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center justify-between pt-3">
 
             <span className="font-semibold text-gray-500">
@@ -101,26 +135,61 @@ const OrderCard = ({ order, onStatusChange, onRateClick }) => {
         </div>
 
         {/* Action Buttons */}
-        {/* Action Buttons */}
+        {order.status === 'awaiting_payment' && (
+          <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/checkout', { 
+                  state: { 
+                    price: order.finalPrice, 
+                    orderId: order.id,
+                    serviceType: order.service?.name || 'General Service',
+                    description: 'Final payment for range service' 
+                  } 
+                });
+              }}
+              className="flex-1 rounded-xl bg-[#1f3b6c] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#152a4d] shadow-md shadow-[#1f3b6c]/20"
+            >
+              Pay Final Price
+            </button>
+          </div>
+        )}
+
+        {order.status === 'pending_completion' && (
+          <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                if (onStatusChange) onStatusChange(order, 'completed');
+              }}
+              className="flex-1 rounded-xl bg-green-500 py-2.5 text-sm font-bold text-white transition-colors hover:bg-green-600 shadow-md shadow-green-500/20"
+            >
+              Confirm Completion
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                // A feature for the future: Dispute/Reject Completion
+                alert("If you disagree with the completion or price, please contact Support.");
+              }}
+              className="px-4 rounded-xl bg-red-50 py-2.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
+            >
+              Dispute
+            </button>
+          </div>
+        )}
+        
         {order.status === 'active' && (
           <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
             <button
               onClick={(e) => {
                 e.preventDefault();
-                if (onStatusChange) onStatusChange(order.id, 'completed');
-              }}
-              className="flex-1 rounded-xl bg-green-50 py-2.5 text-sm font-bold text-green-600 transition-colors hover:bg-green-100"
-            >
-              Complete
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                if (onStatusChange) onStatusChange(order.id, 'cancelled');
+                if (onStatusChange) onStatusChange(order, 'cancelled');
               }}
               className="flex-1 rounded-xl bg-red-50 py-2.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
             >
-              Cancel
+              Cancel Order
             </button>
           </div>
         )}

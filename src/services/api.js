@@ -22,6 +22,30 @@ const setStoredData = (key, data) => localStorage.setItem(key, JSON.stringify(da
 const simulateDelay = (data, delay = 800) => new Promise((resolve) => setTimeout(() => resolve(data), delay));
 
 // ==============================
+// Development Tools
+// ==============================
+export const wipeTestData = async () => {
+  if (!isFirebaseConfigured) return;
+  const collectionsToWipe = ["requests", "offers", "orders", "chats", "notifications", "reviews"];
+  try {
+    for (const collName of collectionsToWipe) {
+      const querySnapshot = await getDocs(collection(db, collName));
+      const deletePromises = [];
+      querySnapshot.forEach((d) => {
+        deletePromises.push(deleteDoc(doc(db, collName, d.id)));
+      });
+      await Promise.all(deletePromises);
+      console.log(`Cleared collection: ${collName}`);
+    }
+    alert("Test data wiped successfully! Please refresh the page.");
+  } catch (error) {
+    console.error("Error wiping data:", error);
+    alert("Failed to wipe data. Check console.");
+  }
+};
+window.wipeTestData = wipeTestData;
+
+// ==============================
 // Orders API
 // ==============================
 export const getOrders = async () => {
@@ -37,7 +61,30 @@ export const getOrders = async () => {
   );
   
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  // Dynamically fetch the latest professional details for all orders
+  await Promise.all(orders.map(async (orderData) => {
+    if (orderData.professionalId) {
+      try {
+        const proDoc = await getDoc(doc(db, "users", orderData.professionalId));
+        if (proDoc.exists()) {
+          const proData = proDoc.data();
+          orderData.provider = {
+            ...orderData.provider,
+            avatar: proData.profileImage || orderData.provider?.avatar || "https://i.pravatar.cc/150?img=11",
+            name: proData.fullName || orderData.provider?.name || "Professional",
+            rating: proData.rating ?? orderData.provider?.rating ?? 0,
+            reviews: proData.reviewsCount ?? proData.reviewCount ?? orderData.provider?.reviews ?? 0
+          };
+        }
+      } catch (e) {
+        console.error("Failed to fetch dynamic pro info for order " + orderData.id, e);
+      }
+    }
+  }));
+
+  return orders;
 };
 
 export const getOrderById = async (id) => {
@@ -51,7 +98,28 @@ export const getOrderById = async (id) => {
     const docRef = doc(db, "orders", String(id));
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() };
+      const orderData = { id: docSnap.id, ...docSnap.data() };
+      
+      // Dynamically fetch the latest professional details
+      if (orderData.professionalId) {
+        try {
+          const proDoc = await getDoc(doc(db, "users", orderData.professionalId));
+          if (proDoc.exists()) {
+            const proData = proDoc.data();
+            orderData.provider = {
+              ...orderData.provider,
+              avatar: proData.profileImage || orderData.provider?.avatar || "https://i.pravatar.cc/150?img=11",
+              name: proData.fullName || orderData.provider?.name || "Professional",
+              rating: proData.rating ?? orderData.provider?.rating ?? 0,
+              reviews: proData.reviewsCount ?? proData.reviewCount ?? orderData.provider?.reviews ?? 0
+            };
+          }
+        } catch (e) {
+          console.error("Failed to fetch dynamic pro info", e);
+        }
+      }
+      
+      return orderData;
     }
   } catch (error) {
     console.error("Error fetching order by ID", error);
@@ -254,6 +322,89 @@ export const sendChatMessage = async (order, messageText) => {
   }, { merge: true });
   
   return []; // onSnapshot will update the UI
+};
+
+// ==============================
+// Reviews API
+// ==============================
+export const submitReview = async (orderId, professionalId, homeownerId, rating, reviewText) => {
+  if (!isFirebaseConfigured || !auth.currentUser) return { success: false };
+
+  try {
+    // Fetch the real homeowner data from Firestore
+    let realName = auth.currentUser.displayName || "Homeowner";
+    let realAvatar = auth.currentUser.photoURL || null;
+    
+    const userDocRef = doc(db, "users", auth.currentUser.uid);
+    const userDocSnap = await getDoc(userDocRef);
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data();
+      if (userData.fullName) realName = userData.fullName;
+      if (userData.profileImage) realAvatar = userData.profileImage;
+    }
+    
+    if (!realAvatar) {
+      realAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(realName)}&background=1f3b6c&color=fff&size=150`;
+    }
+
+    // Fetch the order to get the service name
+    let serviceName = "Service";
+    const orderDocSnap = await getDoc(doc(db, "orders", orderId));
+    if (orderDocSnap.exists()) {
+      const orderData = orderDocSnap.data();
+      if (orderData.serviceType) serviceName = orderData.serviceType;
+      else if (orderData.service && orderData.service.name) serviceName = orderData.service.name;
+    }
+
+    // Add review to reviews collection
+    await addDoc(collection(db, "reviews"), {
+      orderId,
+      professionalId,
+      homeownerId,
+      homeownerName: realName,
+      homeownerAvatar: realAvatar,
+      serviceName,
+      rating,
+      reviewText: reviewText || '',
+      createdAt: serverTimestamp()
+    });
+
+    // Update Professional's average rating
+    const proDocRef = doc(db, "users", professionalId);
+    const proDocSnap = await getDoc(proDocRef);
+    if (proDocSnap.exists()) {
+      const proData = proDocSnap.data();
+      const currentReviewsCount = parseInt(proData.reviewsCount || proData.reviewCount) || 0;
+      const currentRating = proData.rating || 0;
+      
+      const newReviewsCount = currentReviewsCount + 1;
+      const newRating = ((currentRating * currentReviewsCount) + rating) / newReviewsCount;
+      
+      await updateDoc(proDocRef, {
+        rating: Number(newRating.toFixed(1)),
+        reviewsCount: newReviewsCount
+      });
+    }
+
+    // Mark order as rated
+    await updateDoc(doc(db, "orders", orderId), { isRated: true });
+
+    // Notify Professional
+    await addDoc(collection(db, "notifications"), {
+      targetUserId: professionalId,
+      type: "system",
+      title: "New Review Received ⭐",
+      description: `${realName} has left a ${rating}-star review on your recent job.`,
+      orderId,
+      isRead: false,
+      createdAt: serverTimestamp()
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    throw error;
+  }
 };
 
 // ==============================

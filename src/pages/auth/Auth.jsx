@@ -198,7 +198,7 @@ export default function Auth() {
       } else if (error.code === 'auth/invalid-email') {
         setErrors({ email: 'صيغة البريد الإلكتروني غير صحيحة.' });
       } else {
-        setErrors({ email: 'حدث خطأ ما، يرجى المحاولة لاحقاً.' });
+        setErrors({ email: 'An error occurred, please try again later.' });
       }
     } finally {
       setIsLoading(false);
@@ -395,7 +395,7 @@ export default function Auth() {
                         </button>
                       </div>
                       {errors.password && <p className="text-red-500 text-xs mt-1 ml-1 font-medium text-left">{errors.password}</p>}
-                      {resetSent && <p className="text-green-600 text-xs mt-2 ml-1 font-medium text-left">تم إرسال رابط استعادة كلمة المرور! يرجى مراجعة صندوق الوارد.</p>}
+                      {resetSent && <p className="text-green-600 text-xs mt-2 ml-1 font-medium text-left">Password reset link sent! Please check your inbox.</p>}
                     </div>
 
                   <button 
@@ -667,6 +667,7 @@ export default function Auth() {
                                         <span key={skill} className="bg-[#1f3b6c] text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
                                           {skill}
                                           <button 
+                                            type="button"
                                             onClick={(e) => { e.stopPropagation(); toggleSkill(skill); }}
                                             className="hover:bg-white/20 rounded-full p-0.5"
                                           >

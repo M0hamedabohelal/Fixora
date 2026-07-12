@@ -1,11 +1,47 @@
+import { useState, useEffect } from 'react';
 import { useTrail, animated } from '@react-spring/web';
-import { ArrowRight, CheckCircle2, Wrench, Zap, Paintbrush, Hammer } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Wrench, Zap, Paintbrush, Hammer, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Hero3DCard from '../3d/Hero3DCard';
 import FloatingIcon from '../3d/FloatingIcon';
 import heroBg from '../../assets/hero-bg.jpg';
+import { auth, db } from '../../firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 export default function Hero() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    let unsubscribeSnapshot = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+
+        unsubscribeSnapshot = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const updatedUser = { ...(userData ? JSON.parse(userData) : {}), ...data };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+        });
+      } else {
+        setUser(null);
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
+  }, []);
+
   const leftContent = [
     <div key="trusted" className="inline-block px-4 py-1.5 rounded-full bg-secondary/20 text-secondary font-bold text-xs tracking-wider mb-8">
       <span className="inline-block w-2 h-2 rounded-full bg-secondary mr-2" />
@@ -18,13 +54,35 @@ export default function Hero() {
       Find trusted professionals for every home service — quickly and confidently.
     </p>,
     <div key="buttons" className="flex flex-wrap gap-4 mb-12">
-      <Link to="/register" className="group relative overflow-hidden flex items-center justify-center gap-3 px-10 py-5 bg-gradient-to-r from-primary to-[#122a52] text-white rounded-2xl font-black text-lg shadow-[0_10px_40px_-10px_rgba(31,59,108,0.5)] transition-all duration-300 hover:shadow-[0_20px_50px_-15px_rgba(31,59,108,0.7)] hover:-translate-y-1 hover:scale-[1.02]">
-        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-15deg)_translateX(-150%)] group-hover:duration-1000 group-hover:[transform:skew(-15deg)_translateX(150%)] transition-all duration-1000 ease-in-out">
-          <div className="w-16 h-full bg-white/20 blur-sm" />
-        </div>
-        <span className="relative z-10 tracking-wide">Get Started</span> 
-        <ArrowRight className="w-6 h-6 relative z-10 transition-transform duration-300 group-hover:translate-x-1.5" />
-      </Link>
+      {user ? (
+        <Link to={user.role === 'professional' ? '/pro-dashboard' : '/dashboard'} className="group relative overflow-hidden flex items-center justify-center gap-4 px-10 py-4 bg-gradient-to-r from-primary to-[#122a52] text-white rounded-2xl font-black text-lg shadow-[0_10px_40px_-10px_rgba(31,59,108,0.5)] transition-all duration-300 hover:shadow-[0_20px_50px_-15px_rgba(31,59,108,0.7)] hover:-translate-y-1 hover:scale-[1.02]">
+          <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-15deg)_translateX(-150%)] group-hover:duration-1000 group-hover:[transform:skew(-15deg)_translateX(150%)] transition-all duration-1000 ease-in-out">
+            <div className="w-16 h-full bg-white/20 blur-sm" />
+          </div>
+          <div className="relative z-10 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center border border-white/30 shadow-inner overflow-hidden">
+            {user.profileImage ? (
+              <img src={user.profileImage} alt={user.fullName || 'User'} className="w-full h-full object-cover" />
+            ) : user.fullName ? (
+              <span className="text-xl font-bold">{user.fullName.charAt(0).toUpperCase()}</span>
+            ) : (
+              <User className="w-6 h-6" />
+            )}
+          </div>
+          <div className="relative z-10 flex flex-col text-left">
+            <span className="text-xs text-[#c9a765] uppercase tracking-wider font-bold">Welcome back</span>
+            <span className="tracking-wide">Go to Dashboard</span> 
+          </div>
+          <ArrowRight className="w-6 h-6 relative z-10 transition-transform duration-300 group-hover:translate-x-1.5 ml-2" />
+        </Link>
+      ) : (
+        <Link to="/register" className="group relative overflow-hidden flex items-center justify-center gap-3 px-10 py-5 bg-gradient-to-r from-primary to-[#122a52] text-white rounded-2xl font-black text-lg shadow-[0_10px_40px_-10px_rgba(31,59,108,0.5)] transition-all duration-300 hover:shadow-[0_20px_50px_-15px_rgba(31,59,108,0.7)] hover:-translate-y-1 hover:scale-[1.02]">
+          <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-15deg)_translateX(-150%)] group-hover:duration-1000 group-hover:[transform:skew(-15deg)_translateX(150%)] transition-all duration-1000 ease-in-out">
+            <div className="w-16 h-full bg-white/20 blur-sm" />
+          </div>
+          <span className="relative z-10 tracking-wide">Get Started</span> 
+          <ArrowRight className="w-6 h-6 relative z-10 transition-transform duration-300 group-hover:translate-x-1.5" />
+        </Link>
+      )}
     </div>,
     <div key="badges" className="flex flex-wrap gap-4">
       <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm text-sm font-medium text-slate-700">

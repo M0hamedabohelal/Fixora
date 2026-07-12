@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../../firebase/config";
 
@@ -11,6 +12,7 @@ import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, d
 import toast from "react-hot-toast";
 
 const ProfessionalNotifications = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -111,11 +113,26 @@ const ProfessionalNotifications = () => {
   // ==============================
 
   const handleRead = async (id) => {
+    const clickedNotif = notifications.find(n => String(n.id) === String(id));
     try {
       const updated = await markNotificationAsRead(id);
       setNotifications(updated);
     } catch (error) {
       toast.error("Failed to update notification");
+    }
+
+    if (clickedNotif) {
+      if (clickedNotif.type === 'request') {
+        navigate(`/pro-request/${clickedNotif.requestId}`);
+      } else if (clickedNotif.type === 'payment') {
+        navigate('/pro-jobs');
+      } else if (clickedNotif.type === 'system') {
+        if (clickedNotif.title?.includes('Offer Accepted') || clickedNotif.title?.includes('Job Approved')) {
+          navigate('/pro-jobs');
+        } else if (clickedNotif.title?.includes('Review')) {
+          navigate('/pro-profile');
+        }
+      }
     }
   };
 

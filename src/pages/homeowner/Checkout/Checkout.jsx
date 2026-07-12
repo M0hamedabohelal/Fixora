@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, CheckCircle, ShieldCheck, ArrowRight, Wallet, Lock, Smartphone } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import BackButton from '../../../components/homeowner/BackButton';
 import { initiatePaymobPayment } from '../../../services/paymobService';
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const checkoutData = location.state || {
+    price: 120, // fallback
+    serviceType: 'General Service',
+    description: 'Service booking'
+  };
+
+  const serviceFee = Number(checkoutData.price);
+  const platformFee = Math.round(serviceFee * 0.05);
+  const vat = Math.round(serviceFee * 0.15);
+  const total = serviceFee + platformFee + vat;
+
   const [selectedMethod, setSelectedMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -60,11 +72,37 @@ export default function Checkout() {
         phone: "+201000000000"
       };
       
-      const result = await initiatePaymobPayment(144, mockUser, selectedMethod);
+      const result = await initiatePaymobPayment(total, mockUser, selectedMethod);
       
       if (result.type === 'simulation') {
         // Fallback for UI testing without API keys
-        setTimeout(() => {
+        setTimeout(async () => {
+          if (checkoutData.orderId) {
+            try {
+              const { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+              const { db } = await import('../../../firebase/config');
+              
+              const orderRef = doc(db, 'orders', checkoutData.orderId);
+              const orderSnap = await getDoc(orderRef);
+              
+              if (orderSnap.exists()) {
+                await updateDoc(orderRef, { status: 'in_progress' });
+                
+                const orderData = orderSnap.data();
+                await addDoc(collection(db, "notifications"), {
+                  targetUserId: orderData.professionalId,
+                  type: "payment",
+                  title: "Payment Successful",
+                  description: "The customer has completed the payment successfully. You can now start the job.",
+                  orderId: checkoutData.orderId,
+                  isRead: false,
+                  createdAt: serverTimestamp()
+                });
+              }
+            } catch (err) {
+              console.error("Failed to update order status:", err);
+            }
+          }
           setIsProcessing(false);
           setIsSuccess(true);
         }, 1500);
@@ -113,7 +151,7 @@ export default function Checkout() {
           transition={{ delay: 0.3 }}
           className="text-slate-500 font-medium text-lg mb-12 max-w-sm relative z-10"
         >
-          Your payment of <span className="font-bold text-slate-800">144 EGP</span> has been processed securely. The professional has been notified.
+          Your payment of <span className="font-bold text-slate-800">{total} EGP</span> has been processed securely. The professional has been notified.
         </motion.p>
         
         <motion.button
@@ -358,29 +396,29 @@ export default function Checkout() {
                 <i className="fa-solid fa-bolt text-2xl text-blue-500"></i>
               </div>
               <div className="flex flex-col justify-center">
-                <h3 className="font-bold text-slate-800 text-lg">Electrical Repair</h3>
-                <p className="text-sm text-slate-500">Circuit breaker tripping</p>
+                <h3 className="font-bold text-slate-800 text-lg">{checkoutData.serviceType}</h3>
+                <p className="text-sm text-slate-500">{checkoutData.description.length > 30 ? checkoutData.description.substring(0, 30) + '...' : checkoutData.description}</p>
               </div>
             </div>
             
             <div className="space-y-4 pt-6 border-t border-dashed border-slate-200">
               <div className="flex justify-between text-slate-600">
                 <span>Service Fee</span>
-                <span className="font-bold text-slate-800">120 EGP</span>
+                <span className="font-bold text-slate-800">{serviceFee} EGP</span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Fixora Fee (5%)</span>
-                <span className="font-bold text-slate-800">6 EGP</span>
+                <span className="font-bold text-slate-800">{platformFee} EGP</span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>VAT (15%)</span>
-                <span className="font-bold text-slate-800">18 EGP</span>
+                <span className="font-bold text-slate-800">{vat} EGP</span>
               </div>
             </div>
             
             <div className="flex justify-between items-center mt-8 pt-6 border-t-2 border-slate-100">
               <span className="text-lg font-medium text-slate-500">Total</span>
-              <span className="text-3xl font-black text-[#c9a765]">144 EGP</span>
+              <span className="text-3xl font-black text-[#c9a765]">{total} EGP</span>
             </div>
 
             {/* Desktop Pay Now Button */}
@@ -400,7 +438,7 @@ export default function Checkout() {
                   {selectedMethod === 'apple' ? (
                     <><i className="fa-solid fa-bolt text-xl mb-0.5"></i> Pay Now</>
                   ) : (
-                    <>Pay 144 EGP <ArrowRight className="w-5 h-5" /></>
+                    <>Pay {total} EGP <ArrowRight className="w-5 h-5" /></>
                   )}
                 </>
               )}
@@ -415,7 +453,7 @@ export default function Checkout() {
         <div className="flex items-center justify-between gap-6">
           <div>
             <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total</p>
-            <p className="text-2xl font-black text-[#1f3b6c]">144 EGP</p>
+            <p className="text-2xl font-black text-[#1f3b6c]">{total} EGP</p>
           </div>
           <motion.button
             whileHover={{ scale: 1.02 }}

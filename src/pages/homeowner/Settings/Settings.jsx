@@ -9,7 +9,7 @@ export default function Settings() {
       <div className="bg-[#1f3b6c] pt-8 pb-8 px-6 shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl -mr-10 -mt-10"></div>
         <div className="max-w-4xl mx-auto relative z-10 flex items-center justify-between">
-          <BackButton className="bg-white text-white border-white hover:bg-white" />
+          <BackButton className="bg-white/10 text-white border-white/20 hover:bg-white/20" />
           <h1 className="text-white font-bold text-xl">App Settings</h1>
           <div className="w-10"></div>
         </div>

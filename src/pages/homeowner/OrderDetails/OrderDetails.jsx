@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
-import { getOrderById, subscribeToChat, sendChatMessage } from "../../../services/api";
+import { getOrderById, subscribeToChat, sendChatMessage, submitReview } from "../../../services/api";
 
 import OrderHero from "../../../components/homeowner/OrderHero/OrderHero";
 import ProviderCard from "../../../components/homeowner/ProviderCard/ProviderCard";
@@ -53,10 +53,48 @@ const OrderDetails = () => {
 
   const handleSendMessage = async (text) => {
     try {
-      // We don't need to manually setMessages here because the real-time listener will pick it up
       await sendChatMessage(order, text);
     } catch (error) {
       toast.error("Failed to send message");
+    }
+  };
+
+  const handleStatusChange = async (orderObj, newStatus) => {
+    try {
+      const { updateOrderStatus } = await import('../../../services/api');
+      await updateOrderStatus(orderObj.id, newStatus);
+      
+      if (newStatus === 'completed' && orderObj.professionalId) {
+        const priceNum = parseFloat(orderObj.finalPrice || orderObj.price || 0);
+        const netEarnings = priceNum - (priceNum * 0.05); // 5% platform fee
+        const { doc, updateDoc, increment, addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+        const { db, auth } = await import('../../../firebase/config');
+        const userRef = doc(db, 'users', orderObj.professionalId);
+        
+        const updateData = { completedJobs: increment(1) };
+        if (!isNaN(netEarnings)) {
+          updateData.earnings = increment(netEarnings);
+        }
+        await updateDoc(userRef, updateData);
+
+        const customerName = auth.currentUser?.displayName || "The customer";
+        await addDoc(collection(db, "notifications"), {
+          targetUserId: orderObj.professionalId,
+          type: "system",
+          title: "Job Approved & Paid",
+          description: `${customerName} has confirmed the completion of the job! Earnings have been added to your wallet.`,
+          requestId: orderObj.requestId,
+          orderId: orderObj.id,
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
+      }
+
+      setOrder(prev => ({ ...prev, status: newStatus }));
+      toast.success("Order status updated!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update status");
     }
   };
 
@@ -102,6 +140,7 @@ const OrderDetails = () => {
           order={order}
           onOpenChat={() => setOpenChat(true)}
           onOpenRating={() => setOpenRating(true)}
+          onStatusChange={handleStatusChange}
         />
       </div>
 
@@ -118,10 +157,16 @@ const OrderDetails = () => {
         isOpen={openRating}
         onClose={() => setOpenRating(false)}
         providerName={order?.provider?.name}
-        onSubmit={(data) => {
-          console.log("Rating submitted", data);
-          toast.success("Rating submitted successfully!");
-          setOpenRating(false);
+        onSubmit={async (data) => {
+          try {
+            await submitReview(order.id, order.professionalId, order.homeownerId, data.rating, data.review);
+            toast.success("Rating submitted successfully!");
+            setOrder(prev => ({ ...prev, isRated: true }));
+          } catch (error) {
+            toast.error("Failed to submit rating.");
+          } finally {
+            setOpenRating(false);
+          }
         }}
       />
       <HomeownerBottomNav />

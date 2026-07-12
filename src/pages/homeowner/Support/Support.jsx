@@ -10,7 +10,7 @@ export default function Support() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="flex items-center justify-between mb-8">
-            <BackButton className="bg-white text-white border-white hover:bg-white" />
+            <BackButton className="bg-white/10 text-white border-white/20 hover:bg-white/20" />
             <h1 className="text-white font-bold text-xl">Help & Support</h1>
             <div className="w-10"></div>
           </div>

@@ -30,12 +30,40 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (order, newStatus) => {
     try {
-      await updateOrderStatus(id, newStatus);
-      setLocalOrders(prev => prev.map(order => String(order.id) === String(id) ? { ...order, status: newStatus } : order));
+      await updateOrderStatus(order.id, newStatus);
+      
+      if (newStatus === 'completed' && order.professionalId) {
+        const priceNum = parseFloat(order.finalPrice || order.price || 0);
+        const netEarnings = priceNum - (priceNum * 0.05); // 5% platform fee
+        const { doc, updateDoc, increment, addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+        const { db, auth } = await import('../../../firebase/config');
+        const userRef = doc(db, 'users', order.professionalId);
+        
+        const updateData = { completedJobs: increment(1) };
+        if (!isNaN(netEarnings)) {
+          updateData.earnings = increment(netEarnings);
+        }
+        await updateDoc(userRef, updateData);
+
+        const customerName = auth.currentUser?.displayName || "The customer";
+        await addDoc(collection(db, "notifications"), {
+          targetUserId: order.professionalId,
+          type: "system",
+          title: "Job Approved & Paid",
+          description: `${customerName} has confirmed the completion of the job! Earnings have been added to your wallet.`,
+          requestId: order.requestId,
+          orderId: order.id,
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
+      }
+
+      setLocalOrders(prev => prev.map(o => String(o.id) === String(order.id) ? { ...o, status: newStatus } : o));
       toast.success("Order status updated!");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to update status");
     }
   };
@@ -143,14 +171,14 @@ const Orders = () => {
             if (proDoc.exists()) {
               const proData = proDoc.data();
               const currentRating = parseFloat(proData.rating) || 0;
-              const currentCount = parseInt(proData.reviewCount) || 0;
+              const currentCount = parseInt(proData.reviewsCount || proData.reviewCount) || 0;
               
               const newCount = currentCount + 1;
               const newRating = ((currentRating * currentCount) + rating) / newCount;
 
               await updateDoc(proRef, {
                 rating: newRating.toFixed(1),
-                reviewCount: newCount
+                reviewsCount: newCount
               });
             }
 
@@ -162,10 +190,10 @@ const Orders = () => {
             // Update local state
             setLocalOrders(prev => prev.map(o => o.id === ratingOrder.id ? { ...o, hasReview: true } : o));
 
-            toast.success("تم إرسال التقييم بنجاح!");
+            toast.success("Review submitted successfully!");
           } catch (error) {
             console.error("Error submitting review:", error);
-            toast.error("حدث خطأ أثناء إرسال التقييم");
+            toast.error("Error submitting review");
           }
         }}
       />

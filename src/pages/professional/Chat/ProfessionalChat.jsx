@@ -62,29 +62,49 @@ export default function ProfessionalChat() {
     const chatsRef = collection(db, 'chats');
     const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chatsList = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const otherParticipantId = data.participants.find(id => id !== currentUser.uid);
-        const otherParticipantDetails = data.participantDetails?.[otherParticipantId] || {};
-        
-        chatsList.push({
-          id: doc.id,
-          name: otherParticipantDetails.name || 'Homeowner',
-          avatar: otherParticipantDetails.avatar || 'https://via.placeholder.com/150',
-          lastMessage: data.lastMessage || '',
-          time: data.lastMessageTime ? new Date(data.lastMessageTime.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '',
-          lastMessageTimeData: data.lastMessageTime ? data.lastMessageTime.toMillis() : 0,
-          unread: 0,
-          online: true,
-          otherParticipantId
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      try {
+        const chatsPromises = snapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          const otherParticipantId = data.participants.find(id => id !== currentUser.uid);
+          let otherName = data.participantDetails?.[otherParticipantId]?.name || 'Homeowner';
+          let otherAvatar = data.participantDetails?.[otherParticipantId]?.avatar || 'https://via.placeholder.com/150';
+          
+          // Dynamically fetch latest user info
+          if (otherParticipantId) {
+            try {
+              const userDoc = await getDoc(doc(db, 'users', otherParticipantId));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.fullName) otherName = userData.fullName;
+                if (userData.profileImage) otherAvatar = userData.profileImage;
+              }
+            } catch(e) {}
+          }
+          
+          return {
+            id: docSnap.id,
+            name: otherName,
+            avatar: otherAvatar,
+            lastMessage: data.lastMessage || '',
+            time: data.lastMessageTime ? new Date(data.lastMessageTime.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '',
+            lastMessageTimeData: data.lastMessageTime ? data.lastMessageTime.toMillis() : 0,
+            unread: 0,
+            online: true,
+            otherParticipantId
+          };
         });
-      });
-      // Sort by last message time descending (newest first)
-      chatsList.sort((a, b) => b.lastMessageTimeData - a.lastMessageTimeData);
-      setChats(chatsList);
-      setIsLoadingChats(false);
+
+        const chatsList = await Promise.all(chatsPromises);
+        
+        // Sort by last message time descending (newest first)
+        chatsList.sort((a, b) => b.lastMessageTimeData - a.lastMessageTimeData);
+        setChats(chatsList);
+      } catch (error) {
+        console.error("Error processing chats:", error);
+      } finally {
+        setIsLoadingChats(false);
+      }
     }, (error) => {
       console.error("Error fetching chats:", error);
       setIsLoadingChats(false);

@@ -12,7 +12,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 export default function ProfessionalDashboard() {
   const [activeFilter, setActiveFilter] = useState('All');
-  const [userData, setUserData] = useState({ fullName: 'Ahmed Al-Ghamdi', location: 'Cairo, Nasr City', profileImage: null });
+  const [userData, setUserData] = useState({ fullName: 'Ahmed Al-Ghamdi', location: 'Cairo, Nasr City', profileImage: null, rating: 0 });
+  const [stats, setStats] = useState({ completedJobs: 0, earnings: 0 });
   const [jobs, setJobs] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -28,16 +29,13 @@ export default function ProfessionalDashboard() {
         const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setUserData({
+            setUserData(prev => ({
+              ...prev,
               fullName: data.fullName || 'Ahmed Al-Ghamdi',
               location: data.location || 'Cairo, Nasr City',
               profileImage: data.profileImage || null,
-              completedJobs: data.completedJobs || 0,
-              rating: data.rating || 0,
-              earnings: data.earnings || 0,
-              yearsExp: data.yearsExp || 0,
-              successRate: data.successRate || 0
-            });
+              rating: data.rating || 0
+            }));
           }
         });
 
@@ -45,10 +43,27 @@ export default function ProfessionalDashboard() {
         const qOrders = query(collection(db, 'orders'), where('professionalId', '==', user.uid));
         const unsubscribeOrders = onSnapshot(qOrders, (snapshot) => {
           const fetchedOrders = [];
+          let completedCount = 0;
+          let totalEarnings = 0;
+          
           snapshot.forEach(docSnap => {
-            fetchedOrders.push({ id: docSnap.id, ...docSnap.data() });
+            const data = docSnap.data();
+            fetchedOrders.push({ id: docSnap.id, ...data });
+            
+            if (data.status === 'completed') {
+              completedCount++;
+              const priceNum = parseFloat(data.finalPrice || data.price || 0);
+              if (!isNaN(priceNum)) {
+                totalEarnings += (priceNum - (priceNum * 0.05));
+              }
+            }
           });
+          
           setMyOrders(fetchedOrders);
+          setStats({
+            completedJobs: completedCount,
+            earnings: totalEarnings
+          });
         });
 
         return () => {
@@ -180,7 +195,7 @@ export default function ProfessionalDashboard() {
                 <CheckCircle className="w-4 h-4" />
                 <span className="text-xs font-semibold">Completed</span>
               </div>
-              <div className="text-2xl font-bold text-white">{userData.completedJobs || 0}</div>
+              <div className="text-2xl font-bold text-white">{stats.completedJobs}</div>
             </div>
             
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex flex-col justify-between">
@@ -188,7 +203,7 @@ export default function ProfessionalDashboard() {
                 <Star className="w-4 h-4 text-[#c9a765]" />
                 <span className="text-xs font-semibold">Rating</span>
               </div>
-              <div className="text-2xl font-bold text-white">{userData.rating || 0}</div>
+              <div className="text-2xl font-bold text-white">{Number(userData.rating || 0).toFixed(1)}</div>
             </div>
             
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex flex-col justify-between">
@@ -197,7 +212,7 @@ export default function ProfessionalDashboard() {
                 <span className="text-xs font-semibold">Earnings</span>
               </div>
               <div className="text-xl md:text-2xl font-bold text-white flex items-baseline gap-1">
-                {userData.earnings || 0} <span className="text-xs font-normal text-blue-200">EGP</span>
+                {stats.earnings.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-blue-200">EGP</span>
               </div>
             </div>
           </div>
@@ -220,25 +235,7 @@ export default function ProfessionalDashboard() {
         
 
 
-        {/* High Demand Banner */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-gradient-to-r from-[#fdfbf6] to-[#f8ecd4] rounded-2xl p-4 shadow-lg border border-[#c9a765]/20 flex items-center justify-between mb-8"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-[#c9a765]/20 rounded-full flex items-center justify-center text-[#c9a765]">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-                <div>
-                  <BlurText text="High demand in your area today 🔥" delay={30} className="text-slate-800 font-bold text-sm" />
-                  <p className="text-slate-500 text-xs mt-1">5 new requests • Avg price 280 EGP</p>
-                </div>
-              </div>
-              <div className="text-[#c9a765] font-bold text-sm bg-white px-2 py-1 rounded-lg shadow-sm">
-                +23%
-              </div>
-            </motion.div>
+
 
             {/* Job Filters */}
             <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-8 pb-2">

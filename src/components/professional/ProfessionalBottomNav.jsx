@@ -28,7 +28,7 @@ const ProfessionalBottomNav = () => {
       id: 4,
       icon: <Wallet className="w-6 h-6" />,
       label: 'Wallet',
-      path: '/wallet'
+      path: '/pro-wallet'
     },
     {
       id: 5,

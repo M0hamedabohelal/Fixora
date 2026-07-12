@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../../../firebase/config";
 import toast from "react-hot-toast";
 
@@ -76,13 +76,39 @@ export default function RequestOffers() {
 
   const handleStartChat = async (proId) => {
     try {
-      // Create chat metadata
+      // Create or update chat document
       const chatId = [auth.currentUser.uid, proId].sort().join('_');
-      await updateDoc(doc(db, 'chats_metadata', chatId), {
+      
+      // Fetch the pro details to store them for easier UI rendering later
+      let proDetails = { name: "Professional", avatar: "https://via.placeholder.com/150" };
+      try {
+        const proDoc = await getDoc(doc(db, "users", proId));
+        if (proDoc.exists()) {
+          const pd = proDoc.data();
+          proDetails = { name: pd.fullName || "Professional", avatar: pd.profileImage || "https://via.placeholder.com/150" };
+        }
+      } catch(e) {}
+
+      // Fetch Homeowner details 
+      let homeownerDetails = { name: auth.currentUser.displayName || "Homeowner", avatar: auth.currentUser.photoURL || "https://via.placeholder.com/150" };
+      try {
+        const homeDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        if (homeDoc.exists()) {
+          const hd = homeDoc.data();
+          homeownerDetails = { name: hd.fullName || homeownerDetails.name, avatar: hd.profileImage || homeownerDetails.avatar };
+        }
+      } catch(e) {}
+
+      await setDoc(doc(db, 'chats', chatId), {
         participants: [auth.currentUser.uid, proId],
         updatedAt: serverTimestamp(),
-      });
-      navigate('/homeowner/chat');
+        participantDetails: {
+          [proId]: proDetails,
+          [auth.currentUser.uid]: homeownerDetails
+        }
+      }, { merge: true });
+      
+      navigate('/chat');
     } catch (error) {
       toast.error("Failed to start chat");
     }
@@ -113,13 +139,16 @@ export default function RequestOffers() {
           name: offer.proInfo?.fullName || "Professional",
           avatar: offer.proInfo?.profileImage || "https://i.pravatar.cc/150?img=11",
           speciality: "Professional",
-          rating: offer.proInfo?.rating || "New"
+          rating: offer.proInfo?.rating ?? 0
         },
         location: {
           district: (typeof request.location === 'object' ? request.location?.name : request.location) || "Unknown Location",
         },
         scheduledAt: offer.time || "As soon as possible",
-        price: offer.price || "0",
+        priceType: offer.priceType || 'fixed',
+        price: offer.price || null,
+        minPrice: offer.minPrice || null,
+        maxPrice: offer.maxPrice || null,
         currency: "EGP",
         createdAt: serverTimestamp()
       });
@@ -130,7 +159,9 @@ export default function RequestOffers() {
         targetUserId: offer.professionalId,
         type: "system",
         title: "Offer Accepted! 🎉",
-        description: `${customerName} has accepted your offer for ${request.serviceType || "the requested service"}. You can now start the job!`,
+        description: offer.priceType === 'range' 
+          ? `${customerName} has accepted your offer for ${request.serviceType || "the requested service"}. Please inspect the issue and set the final price.`
+          : `${customerName} has accepted your offer and paid for ${request.serviceType || "the requested service"}. You can now start the job.`,
         requestId: request.id,
         offerId: offer.id,
         isRead: false,
@@ -142,7 +173,18 @@ export default function RequestOffers() {
       setRequest(prev => ({...prev, status: 'in-progress'}));
       
       toast.success("Offer accepted successfully!");
-      navigate('/homeowner/orders');
+      if (offer.priceType === 'range') {
+        toast.success("The professional will set the final price when they start the job.");
+        navigate('/dashboard');
+      } else {
+        navigate('/checkout', { 
+          state: { 
+            price: offer.price, 
+            serviceType: request.category || request.serviceType || 'General Service', 
+            description: request.description || request.title || 'Service booking' 
+          } 
+        });
+      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to accept offer");
@@ -158,6 +200,19 @@ export default function RequestOffers() {
       // Update Offer Status
       await updateDoc(doc(db, "offers", offer.id), { status: "rejected" });
       
+      // Send Notification to Professional
+      const customerName = auth.currentUser?.displayName || "The customer";
+      await addDoc(collection(db, "notifications"), {
+        targetUserId: offer.professionalId,
+        type: "system",
+        title: "Offer Rejected",
+        description: `${customerName} has declined your offer for their service request.`,
+        requestId: request.id,
+        offerId: offer.id,
+        isRead: false,
+        createdAt: serverTimestamp()
+      });
+
       // Update local state
       setOffers(offers.map(o => o.id === offer.id ? { ...o, status: 'rejected' } : o));
       
@@ -229,10 +284,22 @@ export default function RequestOffers() {
                   </div>
                   
                   <div className="text-right">
-                    <div className="flex items-baseline gap-1 justify-end">
-                      <span className="text-2xl font-black text-[#1f3b6c]">{offer.price}</span>
-                      <span className="text-sm font-bold text-gray-400">EGP</span>
-                    </div>
+                    {offer.priceType === 'range' ? (
+                      <div className="flex flex-col items-end justify-center h-full">
+                        <div className="flex items-baseline gap-1 text-[#1f3b6c]">
+                          <span className="text-xl font-black">{offer.minPrice}</span>
+                          <span className="text-sm font-bold text-gray-400 mx-0.5">-</span>
+                          <span className="text-xl font-black">{offer.maxPrice}</span>
+                          <span className="text-xs font-bold text-gray-400 ml-1">EGP</span>
+                        </div>
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#c9a765]">Price Range</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-baseline gap-1 justify-end">
+                        <span className="text-2xl font-black text-[#1f3b6c]">{offer.price}</span>
+                        <span className="text-sm font-bold text-gray-400">EGP</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

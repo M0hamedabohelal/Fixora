@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Clock, ShieldCheck, ChevronRight, CheckCircle, Image as ImageIcon, Star } from 'lucide-react';
+import { MapPin, Clock, ShieldCheck, ChevronRight, CheckCircle, Image as ImageIcon, Star, X, Loader2 } from 'lucide-react';
 import BackButton from '../../../components/homeowner/BackButton';
 import ProfessionalBottomNav from '../../../components/professional/ProfessionalBottomNav';
 import { auth, db } from '../../../firebase/config';
@@ -10,10 +10,14 @@ import { onAuthStateChanged } from 'firebase/auth';
 export default function RequestDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [priceType, setPriceType] = useState('fixed'); // 'fixed' or 'range'
   const [price, setPrice] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [time, setTime] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const [requestInfo, setRequestInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,17 +128,26 @@ export default function RequestDetails() {
     if (!auth.currentUser || !requestInfo) return;
     
     try {
-      // 1. Save offer to 'offers' collection
-      await addDoc(collection(db, 'offers'), {
+      const offerData = {
         requestId: requestInfo.id,
         professionalId: auth.currentUser.uid,
         homeownerId: requestInfo.homeownerId,
-        price,
+        priceType,
         time,
         message,
         status: 'pending',
         createdAt: serverTimestamp()
-      });
+      };
+
+      if (priceType === 'fixed') {
+        offerData.price = Number(price);
+      } else {
+        offerData.minPrice = Number(minPrice);
+        offerData.maxPrice = Number(maxPrice);
+      }
+
+      // 1. Save offer to 'offers' collection
+      await addDoc(collection(db, 'offers'), offerData);
 
       // Update Request Offers Count
       await updateDoc(doc(db, 'requests', requestInfo.id), {
@@ -184,7 +197,15 @@ export default function RequestDetails() {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-[#F7F5F2] flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#F7F5F2] flex flex-col items-center justify-center px-4 text-center">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
+          <Loader2 className="w-10 h-10 text-[#c9a765] animate-spin mb-4" />
+          <h2 className="text-[#1f3b6c] font-bold text-lg">Loading Details...</h2>
+          <p className="text-slate-500 text-sm mt-1">Please wait a moment.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!requestInfo && !loading && !submitted) {
@@ -248,7 +269,13 @@ export default function RequestDetails() {
           </h3>
           <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
             {requestInfo.images.map((img, idx) => (
-              <img key={idx} src={img} alt="Job reference" className="w-24 h-24 object-cover rounded-2xl shadow-sm border border-slate-100 shrink-0" />
+              <img 
+                key={idx} 
+                src={img} 
+                alt="Job reference" 
+                className="w-24 h-24 object-cover rounded-2xl shadow-sm border border-slate-100 shrink-0 cursor-pointer hover:opacity-80 transition-opacity" 
+                onClick={() => setSelectedImage(img)}
+              />
             ))}
           </div>
           
@@ -269,21 +296,65 @@ export default function RequestDetails() {
           <h2 className="text-lg font-black text-[#1f3b6c] mb-6">Submit Your Offer</h2>
           
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Your Price (EGP)</label>
-                <div className="relative">
-                  <input 
-                    type="number" 
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="e.g. 250" 
-                    required
-                    className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#1f3b6c] focus:ring-4 focus:ring-[#1f3b6c]/10 transition-all font-semibold"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">EGP</span>
+            <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setPriceType('fixed')}
+                className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all ${priceType === 'fixed' ? 'bg-white text-[#1f3b6c] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Fixed Price
+              </button>
+              <button
+                type="button"
+                onClick={() => setPriceType('range')}
+                className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all ${priceType === 'range' ? 'bg-white text-[#1f3b6c] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Price Range
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {priceType === 'fixed' ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Your Price (EGP)</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="e.g. 250" 
+                      required={priceType === 'fixed'}
+                      className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#1f3b6c] focus:ring-4 focus:ring-[#1f3b6c]/10 transition-all font-semibold"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">EGP</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Min (EGP)</label>
+                    <input 
+                      type="number" 
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                      placeholder="e.g. 100" 
+                      required={priceType === 'range'}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#1f3b6c] focus:ring-4 focus:ring-[#1f3b6c]/10 transition-all font-semibold"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Max (EGP)</label>
+                    <input 
+                      type="number" 
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      placeholder="e.g. 250" 
+                      required={priceType === 'range'}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#1f3b6c] focus:ring-4 focus:ring-[#1f3b6c]/10 transition-all font-semibold"
+                    />
+                  </div>
+                </div>
+              )}
               
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Estimated Time</label>
@@ -357,6 +428,27 @@ export default function RequestDetails() {
         )}
 
       </main>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
+            onClick={() => setSelectedImage(null)}
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <img 
+            src={selectedImage} 
+            alt="Full screen preview" 
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       <ProfessionalBottomNav />
     </div>
