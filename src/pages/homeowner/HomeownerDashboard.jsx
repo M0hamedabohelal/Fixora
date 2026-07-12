@@ -12,26 +12,26 @@ import HomeownerBottomNav from '../../components/homeowner/HomeownerBottomNav';
 export default function HomeownerDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userData, setUserData] = useState({ initials: 'JD', location: 'Cairo, Nasr City', profileImage: null });
-  const [professionals, setProfessionals] = useState([]);
+  const [services, setServices] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [isStartingChat, setIsStartingChat] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfessionals = async () => {
+    const fetchServices = async () => {
       try {
-        const q = query(collection(db, 'users'), where('role', '==', 'professional'));
-        const querySnapshot = await getDocs(q);
-        const pros = [];
-        querySnapshot.forEach((doc) => {
-          pros.push({ id: doc.id, ...doc.data() });
-        });
-        setProfessionals(pros);
+        const servicesSnapshot = await getDocs(collection(db, "services"));
+        const servicesList = servicesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setServices(servicesList);
       } catch (error) {
-        console.error("Error fetching professionals: ", error);
+        console.error("Error fetching services: ", error);
       }
     };
-    fetchProfessionals();
+
+    fetchServices();
   }, []);
 
   useEffect(() => {
@@ -411,54 +411,6 @@ export default function HomeownerDashboard() {
             </div>
           )}
         </div>
-
-        {/* Professionals Section */}
-        {professionals.length > 0 && (
-          <div className="mt-12 mb-8">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#1f3b6c] flex">
-                <SplitText text="Top Professionals" delay={40} />
-              </h2>
-            </div>
-            
-            <div className="flex flex-col gap-4">
-              {professionals.map((pro, index) => (
-                <motion.div 
-                  key={pro.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + (index * 0.1) }}
-                  className="bg-white p-4 rounded-3xl border border-white shadow-sm flex items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-[#f5f3ec] rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-[#1f3b6c] font-bold">
-                      {pro.profileImage ? (
-                        <img src={pro.profileImage} alt={pro.fullName} className="w-full h-full object-cover" />
-                      ) : (
-                        pro.fullName?.substring(0, 2).toUpperCase() || 'PRO'
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[#1f3b6c] text-[15px]">{pro.fullName}</h3>
-                      <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-500 font-medium">
-                        <MapPin className="w-3 h-3 text-[#c9a765]" />
-                        {pro.location || 'Cairo'}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <button 
-                    onClick={() => startChat(pro.id, pro.fullName, pro.profileImage)}
-                    disabled={isStartingChat}
-                    className="w-10 h-10 bg-[#f5f3ec] hover:bg-[#c9a765] hover:text-white text-[#1f3b6c] rounded-xl flex items-center justify-center transition-colors disabled:opacity-50"
-                  >
-                    <MessageSquare className="w-5 h-5" />
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
 
       </main>
 
