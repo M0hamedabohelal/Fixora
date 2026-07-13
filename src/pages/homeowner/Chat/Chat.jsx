@@ -43,6 +43,12 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const filterPhoneNumber = (text) => {
+    // Matches 11-digit numbers, numbers starting with +20, or just sequences of 10+ digits
+    const phoneRegex = /(?:\+?20\s*[-.]?\s*0?|0)?1[0125]\s*[-.]?\s*\d\s*[-.]?\s*\d\s*[-.]?\s*\d\s*[-.]?\s*\d\s*[-.]?\s*\d\s*[-.]?\s*\d\s*[-.]?\s*\d\s*[-.]?\s*\d|\d{10,}/g;
+    return text.replace(phoneRegex, '[تم إخفاء الرقم لحماية الخصوصية]');
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -143,8 +149,11 @@ export default function Chat() {
     e.preventDefault();
     if (!newMessage.trim() || !activeChat || !currentUser) return;
 
-    const messageText = newMessage;
+    const originalMessage = newMessage;
     setNewMessage(''); // optimistic clear
+    
+    // فلترة الأرقام قبل الإرسال
+    const messageText = filterPhoneNumber(originalMessage);
 
     try {
       const messagesRef = collection(db, 'chats', activeChat.id, 'messages');

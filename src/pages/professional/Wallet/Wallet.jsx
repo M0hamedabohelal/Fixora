@@ -10,6 +10,8 @@ export default function Wallet() {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalGross, setTotalGross] = useState(0);
+  const [totalFees, setTotalFees] = useState(0);
   
   const [orders, setOrders] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
@@ -68,14 +70,18 @@ export default function Wallet() {
   // Compute derived state for transactions and balance
   useEffect(() => {
     let totalEarnings = 0;
-    let totalWithdrawn = 0;
+    let totalGrossCalc = 0;
+    let totalFeesCalc = 0;
     
     const allTransactions = [];
 
     orders.forEach(order => {
       const priceNum = parseFloat(order.finalPrice || order.price || 0);
       if (!isNaN(priceNum)) {
-        totalEarnings += (priceNum - (priceNum * 0.05));
+        const fee = priceNum * 0.10;
+        totalGrossCalc += priceNum;
+        totalFeesCalc += fee;
+        totalEarnings += (priceNum - fee);
       }
       allTransactions.push(order);
     });
@@ -95,6 +101,8 @@ export default function Wallet() {
     });
 
     setTransactions(allTransactions);
+    setTotalGross(totalGrossCalc);
+    setTotalFees(totalFeesCalc);
     setBalance(totalEarnings - totalWithdrawn);
     
     if (userUid) {
@@ -154,6 +162,16 @@ export default function Wallet() {
           <h2 className="text-5xl font-black text-white tracking-tight">
             EGP {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h2>
+          <div className="flex gap-4 mt-8">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1 border border-white/10">
+              <p className="text-blue-200 text-xs font-medium uppercase tracking-wider mb-1">Gross Earnings</p>
+              <p className="text-white font-bold text-lg">EGP {totalGross.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1 border border-white/10">
+              <p className="text-blue-200 text-xs font-medium uppercase tracking-wider mb-1">Platform Fee (10%)</p>
+              <p className="text-white font-bold text-lg">-EGP {totalFees.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -183,7 +201,8 @@ export default function Wallet() {
             transactions.map((tx) => {
               if (tx.type === 'order') {
                 const priceNum = parseFloat(tx.finalPrice || tx.price || 0);
-                const netEarnings = priceNum - (priceNum * 0.05); // Match the -5% platform fee calculation
+                const fee = priceNum * 0.10;
+                const netEarnings = priceNum - fee;
                 return (
                   <div key={tx.id} className="bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-100">
                     <div className="flex items-center gap-4">
@@ -196,8 +215,8 @@ export default function Wallet() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-green-600">+EGP {priceNum.toFixed(2)}</div>
-                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">Net: {netEarnings.toFixed(2)} (5% Fee)</div>
+                      <div className="font-bold text-green-600">+EGP {netEarnings.toFixed(2)}</div>
+                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">Gross: {priceNum.toFixed(2)} (10% Fee)</div>
                     </div>
                   </div>
                 )
