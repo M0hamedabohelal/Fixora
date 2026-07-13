@@ -67,11 +67,11 @@ export default function Wallet() {
     return () => unsubscribeAuth();
   }, []);
 
-  // Compute derived state for transactions and balance
   useEffect(() => {
     let totalEarnings = 0;
     let totalGrossCalc = 0;
     let totalFeesCalc = 0;
+    let totalWithdrawn = 0;
     
     const allTransactions = [];
 
